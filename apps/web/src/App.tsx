@@ -46,7 +46,7 @@ const nav = [
 ];
 function Sidebar() {
   return <aside className="sidebar">
-    <Link className="brand" to="/"><img className="brand-logo" src="/estara-logo.webp" alt="Estara logo"/><div><strong>Estara</strong><small>PERFORMANCE INTELLIGENCE</small></div></Link>
+    <Link className="brand" to="/"><img className="brand-logo" src="/estara-logo-transparent.webp" alt="Estara logo"/><div><strong>Estara</strong><small>PERFORMANCE INTELLIGENCE</small></div></Link>
     <p className="side-label">WORKSPACE</p>
     <nav className="nav">{nav.map(item => <NavLink key={item.to} to={item.to} end={item.end} className={({isActive}) => 'nav-item'+(isActive?' active':'')}><item.icon size={18}/><span>{item.label}</span></NavLink>)}</nav>
     <div className="side-bottom"><div className="side-info"><ShieldCheck size={17}/><div><strong>Demo environment</strong><p>Fictional sample records only</p></div></div><small>ESTARA · INITIAL SKELETON</small></div>
