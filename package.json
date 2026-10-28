@@ -1,0 +1,21 @@
+
+{
+  "name": "estara",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": ["apps/*"],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "concurrently -n API,WEB -c cyan,green \"npm run dev -w @estara/api\" \"npm run dev -w @estara/web\"",
+    "build": "npm run build -w @estara/api && npm run build -w @estara/web",
+    "check": "npm run check -w @estara/api && npm run check -w @estara/web",
+    "test": "npm run test -w @estara/api",
+    "db:generate": "npm run db:generate -w @estara/api",
+    "db:migrate": "npm run db:migrate -w @estara/api"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.0"
+  }
+}

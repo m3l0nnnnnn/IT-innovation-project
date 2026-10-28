@@ -3,3 +3,8 @@ dist/
 .env
 .env.*
 !.env.example
+coverage/
+*.log
+.DS_Store
+.vscode/settings.json
+
