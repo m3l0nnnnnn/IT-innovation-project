@@ -13,7 +13,8 @@
     "check": "npm run check -w @estara/api && npm run check -w @estara/web",
     "test": "npm run test -w @estara/api",
     "db:generate": "npm run db:generate -w @estara/api",
-    "db:migrate": "npm run db:migrate -w @estara/api"
+    "db:migrate": "npm run db:migrate -w @estara/api",
+    "db:ping": "npm run db:ping -w @estara/api"
   },
   "devDependencies": {
     "concurrently": "^9.2.0"

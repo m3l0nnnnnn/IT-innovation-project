@@ -10,7 +10,8 @@
     "check": "tsc --noEmit -p tsconfig.json",
     "test": "tsx --test src/tests/*.test.ts",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate"
+    "db:migrate": "drizzle-kit migrate",
+    "db:ping": "tsx src/db/ping.ts"
   },
   "dependencies": {
     "cors": "^2.8.5",
