@@ -29,11 +29,11 @@
   overflow:hidden;
 }
 .sidebar-header .brand-text strong{
-  font-size:21px;
+  font-size:calc(21px * var(--estara-font-scale, 1));
 }
 .sidebar-header .brand-text small{
   white-space:nowrap;
-  font-size:7px;
+  font-size:calc(7px * var(--estara-font-scale, 1));
 }
 .sidebar-toggle{
   display:grid;

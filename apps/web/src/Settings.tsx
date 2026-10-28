@@ -1,12 +1,12 @@
-import { useRef, useState, type ChangeEvent, type FormEvent, type ReactNode } from 'react';
+import { useRef, useState, type CSSProperties, type ChangeEvent, type FormEvent, type ReactNode } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
   BellRing, Check, CheckCircle2, CircleUserRound, KeyRound, LockKeyhole,
   Mail, Monitor, Moon, RotateCcw, ShieldCheck, Smartphone, Sun, UserRound, Camera, Upload, Trash2
 } from 'lucide-react';
 import {
-  applyColorMode, SETTINGS_KEY,
-  type ColorMode
+  applyColorMode, applyFontSize, SETTINGS_KEY,
+  type ColorMode, type FontSizeLevel
 } from './appearance';
 import { getSavedProfilePhoto, makeProfilePhoto, PROFILE_PHOTO_KEY } from './profile-photo';
 import './account-settings.css';
@@ -17,6 +17,7 @@ type Preferences = {
   actionReminders: boolean;
   weeklyDigest: boolean;
   colorMode: ColorMode;
+  fontSize: FontSizeLevel;
 };
 type DemoAccount = {
   profile: { displayName: string; jobTitle: string };
@@ -29,7 +30,8 @@ const INITIAL: DemoAccount = {
     warningUpdates: true,
     actionReminders: true,
     weeklyDigest: false,
-    colorMode: 'system'
+    colorMode: 'system',
+    fontSize: 1
   }
 };
 const sections: { id: Section; title: string; description: string; icon: typeof UserRound }[] = [
@@ -53,7 +55,8 @@ function readAccount(): DemoAccount {
         warningUpdates: typeof prefs?.warningUpdates === 'boolean' ? prefs.warningUpdates : INITIAL.preferences.warningUpdates,
         actionReminders: typeof prefs?.actionReminders === 'boolean' ? prefs.actionReminders : INITIAL.preferences.actionReminders,
         weeklyDigest: typeof prefs?.weeklyDigest === 'boolean' ? prefs.weeklyDigest : INITIAL.preferences.weeklyDigest,
-        colorMode: prefs?.colorMode === 'light' || prefs?.colorMode === 'dark' ? prefs.colorMode : 'system'
+        colorMode: prefs?.colorMode === 'light' || prefs?.colorMode === 'dark' ? prefs.colorMode : 'system',
+        fontSize: prefs?.fontSize === 0 || prefs?.fontSize === 2 || prefs?.fontSize === 3 ? prefs.fontSize : 1
       }
     };
   } catch {
@@ -134,6 +137,7 @@ export default function SettingsPage() {
       setAccount(next);
       window.dispatchEvent(new Event('estara-account-updated'));
       applyColorMode(next.preferences.colorMode);
+      applyFontSize(next.preferences.fontSize);
       setError('');
       setFeedback(message);
     } catch {
@@ -213,6 +217,7 @@ export default function SettingsPage() {
       setDisplayName(INITIAL.profile.displayName);
       setJobTitle(INITIAL.profile.jobTitle);
       applyColorMode('system');
+      applyFontSize(1);
       setError('');
       setFeedback('Browser-only settings restored to defaults.');
     } catch {
@@ -294,6 +299,39 @@ export default function SettingsPage() {
             </button>)}
           </div>
           <p className="account-helper">Your choice is applied immediately and remembered in this browser. “Follow system” tracks Windows/macOS theme changes automatically.</p>
+          <div className="account-text-size-section">
+            <div className="account-text-size-heading">
+              <div>
+                <h3>Text size</h3>
+                <p>Make text across Estara easier to read.</p>
+              </div>
+              <span className="account-text-size-current">{['Small', 'Standard', 'Large', 'Extra large'][account.preferences.fontSize]}</span>
+            </div>
+            <div className="account-text-size-slider">
+              <span className="account-text-size-a small" aria-hidden="true">A</span>
+              <input
+                type="range"
+                min={0}
+                max={3}
+                step={1}
+                value={account.preferences.fontSize}
+                onChange={event => updatePreference('fontSize', Number(event.target.value) as FontSizeLevel)}
+                aria-label="Text size"
+                aria-valuetext={['Small', 'Standard', 'Large', 'Extra large'][account.preferences.fontSize]}
+                style={{ '--text-size-progress': String(account.preferences.fontSize / 3 * 100) + '%' } as CSSProperties}
+              />
+              <span className="account-text-size-a large" aria-hidden="true">A</span>
+            </div>
+            <div className="account-text-size-ticks" aria-hidden="true">
+              <span>Small</span><span>Standard</span><span>Large</span><span>Extra large</span>
+            </div>
+            <div className="account-text-size-preview">
+              <span>LIVE PREVIEW</span>
+              <strong>Clear information at a glance</strong>
+              <p>Review cases, spot emerging risks, and stay on top of your work.</p>
+            </div>
+            <p className="account-helper">Text size applies throughout Estara and is remembered on this device.</p>
+          </div>
         </section>}
 
         {section === 'notifications' && <section className="card account-panel" aria-label="Notification preferences">

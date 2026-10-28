@@ -1,4 +1,23 @@
 export type ColorMode = 'light' | 'dark' | 'system';
+export type FontSizeLevel = 0 | 1 | 2 | 3;
+const FONT_SCALES: readonly number[] = [0.9, 1, 1.15, 1.3];
+
+export function getSavedFontSize(): FontSizeLevel {
+  try {
+    const saved = JSON.parse(localStorage.getItem(SETTINGS_KEY) ?? '{}') as {
+      preferences?: { fontSize?: unknown };
+    };
+    const size = saved?.preferences?.fontSize;
+    return size === 0 || size === 2 || size === 3 ? size : 1;
+  } catch {
+    return 1;
+  }
+}
+
+export function applyFontSize(level: FontSizeLevel): void {
+  document.documentElement.dataset.fontSize = String(level);
+  document.documentElement.style.setProperty('--estara-font-scale', String(FONT_SCALES[level]));
+}
 
 export const SETTINGS_KEY = 'estara.demo.account-settings.v1';
 
@@ -28,6 +47,7 @@ export function initializeAppearance(): void {
   delete document.documentElement.dataset.density;
   delete document.documentElement.dataset.reduceMotion;
   applyColorMode(getSavedColorMode());
+  applyFontSize(getSavedFontSize());
   // System mode follows Windows/macOS/browser theme changes without a page reload.
   window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
     if (getSavedColorMode() === 'system') applyColorMode('system');

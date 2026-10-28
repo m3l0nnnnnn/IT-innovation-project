@@ -1,12 +1,12 @@
 /* Sidebar account: one direct link to My Profile, no dropdown. */
 .profile-menu-root{position:relative;width:100%;min-width:0}
-.profile-trigger{display:flex;align-items:center;gap:11px;width:100%;min-width:0;padding:9px;border:1px solid transparent;background:transparent;border-radius:12px;color:#dcecf4;text-align:left;font:700 12px var(--font-ui,'Manrope',sans-serif);cursor:pointer;text-decoration:none;transition:background .15s,border-color .15s}
+.profile-trigger{display:flex;align-items:center;gap:11px;width:100%;min-width:0;padding:9px;border:1px solid transparent;background:transparent;border-radius:12px;color:#dcecf4;text-align:left;font:700 calc(12px * var(--estara-font-scale, 1)) var(--font-ui,'Manrope',sans-serif);cursor:pointer;text-decoration:none;transition:background .15s,border-color .15s}
 .profile-trigger:hover,.profile-trigger.is-active{background:#1b4057;border-color:#335b6e}
 .profile-trigger:focus-visible{outline:2px solid #5dd9cb;outline-offset:2px}
-.profile-avatar{display:grid;place-items:center;flex:none;width:37px;height:37px;border-radius:50%;background:linear-gradient(135deg,#2569b2,#0cb1a6);color:#fff;font:800 11px var(--font-ui,'Manrope',sans-serif);letter-spacing:.01em}
+.profile-avatar{display:grid;place-items:center;flex:none;width:37px;height:37px;border-radius:50%;background:linear-gradient(135deg,#2569b2,#0cb1a6);color:#fff;font:800 calc(11px * var(--estara-font-scale, 1)) var(--font-ui,'Manrope',sans-serif);letter-spacing:.01em}
 .profile-trigger-details{display:grid;gap:4px;flex:1;min-width:0}
-.profile-trigger-name{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#f1f8fd;font-size:12px;font-weight:800}
-.profile-trigger-role{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#8faec0;font-size:10px;font-weight:500}
+.profile-trigger-name{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#f1f8fd;font-size:calc(12px * var(--estara-font-scale, 1));font-weight:800}
+.profile-trigger-role{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#8faec0;font-size:calc(10px * var(--estara-font-scale, 1));font-weight:500}
 /* When collapsed, the avatar itself remains the clickable profile link. */
 .sidebar.sidebar-collapsed .profile-trigger{justify-content:center;padding:7px 2px}
 .sidebar.sidebar-collapsed .profile-trigger-details{display:none}
