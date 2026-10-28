@@ -1,5 +1,4 @@
 export type ColorMode = 'light' | 'dark' | 'system';
-export type Density = 'comfortable' | 'compact';
 
 export const SETTINGS_KEY = 'estara.demo.account-settings.v1';
 
@@ -24,24 +23,11 @@ export function applyColorMode(mode: ColorMode): void {
   themeMeta?.setAttribute('content', dark ? '#0d1928' : '#ffffff');
 }
 
-export function applyDisplayPreferences(density: Density, reduceMotion: boolean): void {
-  document.documentElement.dataset.density = density;
-  document.documentElement.dataset.reduceMotion = String(reduceMotion);
-}
-
 export function initializeAppearance(): void {
+  // Ignore removed density/motion settings from older local browser preferences.
+  delete document.documentElement.dataset.density;
+  delete document.documentElement.dataset.reduceMotion;
   applyColorMode(getSavedColorMode());
-  try {
-    const saved = JSON.parse(localStorage.getItem(SETTINGS_KEY) ?? '{}') as {
-      preferences?: { density?: unknown; reduceMotion?: unknown };
-    };
-    applyDisplayPreferences(
-      saved?.preferences?.density === 'compact' ? 'compact' : 'comfortable',
-      saved?.preferences?.reduceMotion === true
-    );
-  } catch {
-    applyDisplayPreferences('comfortable', false);
-  }
   // System mode follows Windows/macOS/browser theme changes without a page reload.
   window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
     if (getSavedColorMode() === 'system') applyColorMode('system');

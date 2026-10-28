@@ -2,11 +2,11 @@ import { useState, type FormEvent, type ReactNode } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
   BellRing, Check, CheckCircle2, CircleUserRound, KeyRound, LockKeyhole,
-  Mail, Monitor, Moon, RotateCcw, ShieldCheck, Smartphone, Sun, UserRound, Rows3, List
+  Mail, Monitor, Moon, RotateCcw, ShieldCheck, Smartphone, Sun, UserRound
 } from 'lucide-react';
 import {
-  applyColorMode, applyDisplayPreferences, SETTINGS_KEY,
-  type ColorMode, type Density
+  applyColorMode, SETTINGS_KEY,
+  type ColorMode
 } from './appearance';
 import './account-settings.css';
 
@@ -15,8 +15,6 @@ type Preferences = {
   warningUpdates: boolean;
   actionReminders: boolean;
   weeklyDigest: boolean;
-  density: Density;
-  reduceMotion: boolean;
   colorMode: ColorMode;
 };
 type DemoAccount = {
@@ -30,8 +28,6 @@ const INITIAL: DemoAccount = {
     warningUpdates: true,
     actionReminders: true,
     weeklyDigest: false,
-    density: 'comfortable',
-    reduceMotion: false,
     colorMode: 'system'
   }
 };
@@ -56,8 +52,6 @@ function readAccount(): DemoAccount {
         warningUpdates: typeof prefs?.warningUpdates === 'boolean' ? prefs.warningUpdates : INITIAL.preferences.warningUpdates,
         actionReminders: typeof prefs?.actionReminders === 'boolean' ? prefs.actionReminders : INITIAL.preferences.actionReminders,
         weeklyDigest: typeof prefs?.weeklyDigest === 'boolean' ? prefs.weeklyDigest : INITIAL.preferences.weeklyDigest,
-        density: prefs?.density === 'compact' ? 'compact' : 'comfortable',
-        reduceMotion: prefs?.reduceMotion === true,
         colorMode: prefs?.colorMode === 'light' || prefs?.colorMode === 'dark' ? prefs.colorMode : 'system'
       }
     };
@@ -105,7 +99,6 @@ export default function SettingsPage() {
       setAccount(next);
       window.dispatchEvent(new Event('estara-account-updated'));
       applyColorMode(next.preferences.colorMode);
-      applyDisplayPreferences(next.preferences.density, next.preferences.reduceMotion);
       setError('');
       setFeedback(message);
     } catch {
@@ -143,7 +136,6 @@ export default function SettingsPage() {
       setDisplayName(INITIAL.profile.displayName);
       setJobTitle(INITIAL.profile.jobTitle);
       applyColorMode('system');
-      applyDisplayPreferences('comfortable', false);
       setError('');
       setFeedback('Browser-only settings restored to defaults.');
     } catch {
@@ -197,33 +189,6 @@ export default function SettingsPage() {
               <div className="account-theme-caption"><mode.icon size={17}/><strong>{mode.title}</strong>{account.preferences.colorMode===mode.id&&<Check className="account-theme-check" size={15}/>}</div><small>{mode.detail}</small>
             </button>)}
           </div>
-          <div className="account-preference-divider"/>
-          <div className="account-group-heading"><h3>Display preferences</h3><p>Adjust spacing and motion throughout Estara.</p></div>
-          <div className="account-density-heading"><div><h3>Layout density</h3><p>Choose how much information fits on each page.</p></div></div>
-          <div className="account-density-options" role="group" aria-label="Layout density">
-            {([
-              { id: 'comfortable' as const, label: 'Comfortable', detail: 'Spacious and easy to scan', icon: Rows3 },
-              { id: 'compact' as const, label: 'Compact', detail: 'More data with less scrolling', icon: List }
-            ]).map(option => (
-              <button key={option.id} type="button"
-                className={'account-density-option' + (account.preferences.density === option.id ? ' active' : '')}
-                aria-pressed={account.preferences.density === option.id}
-                onClick={() => updatePreference('density', option.id)}>
-                <span className={'account-density-visual ' + option.id} aria-hidden="true">
-                  <span className="density-visual-side"/>
-                  <span className="density-visual-main">
-                    <i/><i/><i/>
-                  </span>
-                </span>
-                <span className="account-density-info">
-                  <option.icon size={18}/>
-                  <span><strong>{option.label}</strong><small>{option.detail}</small></span>
-                  {account.preferences.density === option.id && <span className="account-density-selected"><Check size={14}/></span>}
-                </span>
-              </button>
-            ))}
-          </div>
-          <Toggle title="Reduce motion" detail="Minimise transitions and animations." checked={account.preferences.reduceMotion} onChange={v=>updatePreference('reduceMotion',v)}/>
           <p className="account-helper">Your choice is applied immediately and remembered in this browser. “Follow system” tracks Windows/macOS theme changes automatically.</p>
         </section>}
 
