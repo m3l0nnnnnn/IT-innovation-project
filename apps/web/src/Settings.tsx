@@ -1,13 +1,14 @@
-import { useState, type FormEvent, type ReactNode } from 'react';
+import { useRef, useState, type ChangeEvent, type FormEvent, type ReactNode } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
   BellRing, Check, CheckCircle2, CircleUserRound, KeyRound, LockKeyhole,
-  Mail, Monitor, Moon, RotateCcw, ShieldCheck, Smartphone, Sun, UserRound
+  Mail, Monitor, Moon, RotateCcw, ShieldCheck, Smartphone, Sun, UserRound, Camera, Upload, Trash2
 } from 'lucide-react';
 import {
   applyColorMode, SETTINGS_KEY,
   type ColorMode
 } from './appearance';
+import { getSavedProfilePhoto, makeProfilePhoto, PROFILE_PHOTO_KEY } from './profile-photo';
 import './account-settings.css';
 
 type Section = 'profile' | 'appearance' | 'notifications' | 'security';
@@ -90,8 +91,45 @@ export default function SettingsPage() {
   const [account, setAccount] = useState<DemoAccount>(readAccount);
   const [displayName, setDisplayName] = useState(account.profile.displayName);
   const [jobTitle, setJobTitle] = useState(account.profile.jobTitle);
+  const [profilePhoto, setProfilePhoto] = useState<string | null>(getSavedProfilePhoto);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
   const [feedback, setFeedback] = useState('');
   const [error, setError] = useState('');
+
+  async function uploadPhoto(event: ChangeEvent<HTMLInputElement>): Promise<void> {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    setUploadingPhoto(true);
+    setError('');
+    setFeedback('');
+    try {
+      const resized = await makeProfilePhoto(file);
+      // Never persist the uncompressed original image.
+      localStorage.setItem(PROFILE_PHOTO_KEY, resized);
+      setProfilePhoto(resized);
+      window.dispatchEvent(new Event('estara-account-updated'));
+      setFeedback('Profile photo saved to this browser.');
+    } catch (problem) {
+      setError(problem instanceof Error ? problem.message : 'Could not save the selected photo.');
+    } finally {
+      if (fileRef.current) fileRef.current.value = '';
+      setUploadingPhoto(false);
+    }
+  }
+
+  function removePhoto(): void {
+    try {
+      localStorage.removeItem(PROFILE_PHOTO_KEY);
+      setProfilePhoto(null);
+      window.dispatchEvent(new Event('estara-account-updated'));
+      setError('');
+      setFeedback('Profile photo removed. Your initials will be shown instead.');
+    } catch {
+      setError('Unable to remove the photo from browser storage.');
+      setFeedback('');
+    }
+  }
 
   function save(next: DemoAccount, message: string): void {
     try {
@@ -131,6 +169,8 @@ export default function SettingsPage() {
   function reset(): void {
     try {
       localStorage.removeItem(SETTINGS_KEY);
+      localStorage.removeItem(PROFILE_PHOTO_KEY);
+      setProfilePhoto(null);
       setAccount(INITIAL);
       window.dispatchEvent(new Event('estara-account-updated'));
       setDisplayName(INITIAL.profile.displayName);
@@ -152,7 +192,7 @@ export default function SettingsPage() {
     </div>
     <div className="account-layout">
       <aside className="account-nav-panel">
-        <div className="account-identity"><div className="account-avatar">{initials}</div><div><strong>{account.profile.displayName}</strong><small>EMS Manager · Demo</small></div></div>
+        <div className="account-identity"><div className="account-avatar">{profilePhoto ? <img className="account-avatar-image" src={profilePhoto} alt=""/> : initials}</div><div><strong>{account.profile.displayName}</strong><small>EMS Manager · Demo</small></div></div>
         <nav className="account-sections" aria-label="Account settings sections">
           {sections.map(item => <button key={item.id} type="button" className={'account-section-link' + (item.id === section ? ' selected' : '')} aria-pressed={item.id === section} onClick={() => { setSectionParams({ section: item.id }); setError(''); setFeedback(''); }}><item.icon size={18}/><span><strong>{item.title}</strong><small>{item.description}</small></span></button>)}
         </nav>
@@ -164,7 +204,31 @@ export default function SettingsPage() {
 
         {section === 'profile' && <section className="card account-panel" aria-label="My profile">
           <SectionHeading icon={<CircleUserRound size={20}/>} title="My profile" detail="Details displayed in your Estara demo workspace."/>
-          <div className="account-profile-overview"><div className="account-avatar large">{initials}</div><div><strong>{account.profile.displayName}</strong><small>Illustrative account · Not signed in</small></div><span className="account-neutral-pill">DEMO</span></div>
+          <div className="account-profile-overview"><div className="account-avatar large">{profilePhoto ? <img className="account-avatar-image" src={profilePhoto} alt=""/> : initials}</div><div><strong>{account.profile.displayName}</strong><small>Illustrative account · Not signed in</small></div><span className="account-neutral-pill">DEMO</span></div>
+          <div className="account-photo-editor">
+            <div className="account-photo-icon"><Camera size={19}/></div>
+            <div className="account-photo-copy">
+              <strong>Profile picture</strong>
+              <small>JPG, PNG or WebP · Maximum 5 MB · Automatically cropped to a square</small>
+              <small>Saved only in this browser; no image is uploaded to Estara's server.</small>
+            </div>
+            <div className="account-photo-controls">
+              <input
+                ref={fileRef}
+                id="estara-profile-photo-input"
+                className="account-photo-input"
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                aria-label="Choose profile picture"
+                disabled={uploadingPhoto}
+                onChange={event => { void uploadPhoto(event); }}
+              />
+              <label className={'account-photo-upload' + (uploadingPhoto ? ' busy' : '')} htmlFor="estara-profile-photo-input">
+                <Upload size={15}/>{uploadingPhoto ? 'Processing…' : profilePhoto ? 'Change photo' : 'Upload photo'}
+              </label>
+              {profilePhoto && <button className="account-photo-remove" type="button" disabled={uploadingPhoto} onClick={removePhoto}><Trash2 size={15}/> Remove</button>}
+            </div>
+          </div>
           <form onSubmit={saveProfile}>
             <div className="account-fields">
               <label><span>Display name</span><input value={displayName} required minLength={2} maxLength={64} autoComplete="off" onChange={e=>setDisplayName(e.target.value)}/></label>
@@ -172,7 +236,7 @@ export default function SettingsPage() {
               <label><span>Email address</span><input readOnly value="Not configured for demo" aria-label="Email address not configured"/></label>
               <label><span>Access role</span><input readOnly value="EMS Manager (example)"/></label>
             </div>
-            <div className="account-actions"><p>Only display name and job title can be saved in this prototype.</p><button type="submit" className="primary-button">Save changes</button></div>
+            <div className="account-actions"><p>Profile details and photo are saved locally on this device.</p><button type="submit" className="primary-button">Save changes</button></div>
           </form>
         </section>}
 

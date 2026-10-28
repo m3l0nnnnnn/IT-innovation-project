@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { SETTINGS_KEY } from './appearance';
+import { getSavedProfilePhoto } from './profile-photo';
 import './profile-menu.css';
 
 type Profile = { displayName: string; jobTitle: string };
@@ -38,9 +39,10 @@ function getInitials(name: string): string {
 /** The sidebar account is a direct link to My Profile, not a popup menu. */
 export default function ProfileMenu() {
   const [profile, setProfile] = useState<Profile>(getProfile);
+  const [profilePhoto, setProfilePhoto] = useState<string | null>(getSavedProfilePhoto);
 
   useEffect(() => {
-    const refresh = () => setProfile(getProfile());
+    const refresh = () => { setProfile(getProfile()); setProfilePhoto(getSavedProfilePhoto()); };
     window.addEventListener('estara-account-updated', refresh);
     window.addEventListener('storage', refresh);
     return () => {
@@ -56,7 +58,7 @@ export default function ProfileMenu() {
       aria-label={'Open My Profile for ' + profile.displayName}
       title={'My Profile — ' + profile.displayName}
     >
-      <span className="profile-avatar" aria-hidden="true">{getInitials(profile.displayName)}</span>
+      <span className="profile-avatar" aria-hidden="true">{profilePhoto ? <img className="profile-avatar-image" src={profilePhoto} alt=""/> : getInitials(profile.displayName)}</span>
       <span className="profile-trigger-details">
         <span className="profile-trigger-name">{profile.displayName}</span>
         <span className="profile-trigger-role">{profile.jobTitle}</span>

@@ -94,3 +94,23 @@
 @media(max-width:1120px){.account-layout{grid-template-columns:205px minmax(0,1fr)}.account-panel{padding:22px}.account-theme-preview{height:83px}}
 @media(max-width:850px){.account-layout{grid-template-columns:1fr;gap:13px}.account-nav-panel{padding:12px}.account-identity,.account-nav-foot{display:none}.account-sections{padding-top:0;display:flex;overflow-x:auto}.account-section-link{flex:none;width:auto;padding:10px 13px}.account-section-link small{display:none}.account-panel{min-height:auto}}
 @media(max-width:620px){.account-demo-chip{margin-top:14px}.account-fields{grid-template-columns:1fr}.account-themes{gap:8px}.account-theme-option{padding:7px}.account-theme-option.active{padding:6px}.account-theme-preview{height:65px;padding:6px;gap:4px}.account-theme-caption{gap:4px}.account-theme-caption strong{font-size:10px}.account-theme-option>small{font-size:9px}.account-actions{flex-direction:column;align-items:flex-start}.account-security-row{gap:8px}.account-status{font-size:9px}.account-section-link{padding:10px}.topbar-account span{display:none}}
+
+/* My Profile: local-only profile photo editor. */
+.account-avatar{overflow:hidden}
+.account-avatar-image,.profile-avatar-image{display:block;width:100%;height:100%;object-fit:cover;border-radius:inherit}
+.account-photo-editor{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:16px 0 20px;margin:-10px 0 22px;border-bottom:1px solid var(--ui-border,#e4ebf1)}
+.account-photo-icon{display:grid;place-items:center;flex:none;width:38px;height:38px;background:var(--ui-soft,#eaf5f5);border-radius:10px;color:var(--ui-accent,#169ca2)}
+.account-photo-copy{display:grid;flex:1;min-width:185px;gap:5px}
+.account-photo-copy strong{color:var(--ui-title,#304c62);font-size:12px}
+.account-photo-copy small{color:var(--ui-muted,#879aa8);font-size:10px;line-height:1.5}
+.account-photo-controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.account-photo-input{position:absolute;width:1px;height:1px;opacity:0;overflow:hidden;clip-path:inset(50%)}
+.account-photo-upload,.account-photo-remove{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:9px 11px;border-radius:9px;white-space:nowrap;font-size:11px;font-weight:750;cursor:pointer}
+.account-photo-upload{background:#156e80;color:#fff;border:1px solid #156e80}
+.account-photo-upload:hover{background:#10596b}
+.account-photo-input:focus-visible + .account-photo-upload{outline:3px solid #4fc5ce;outline-offset:2px}
+.account-photo-upload.busy{opacity:.55;pointer-events:none}
+.account-photo-remove{background:var(--ui-card,#fff);border:1px solid var(--ui-border,#dce6ec);color:var(--ui-muted-strong,#657d8f)}
+.account-photo-remove:hover{color:#c45b58;border-color:#d69b9a}
+.account-photo-remove:disabled{opacity:.5;cursor:wait}
+@media(max-width:650px){.account-photo-editor{align-items:flex-start}.account-photo-controls{width:100%;padding-left:50px}}
