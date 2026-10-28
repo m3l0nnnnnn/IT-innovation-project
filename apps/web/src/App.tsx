@@ -103,7 +103,7 @@ function Sidebar() {
   </aside>;
 }
 function Layout() {
-  return <div className="app-layout"><Sidebar/><main className="main-area"><div className="topbar"><div>Estara <span>/</span> Management workspace</div></div><div className="content"><Routes>
+  return <div className="app-layout"><Sidebar/><main className="main-area"><div className="content"><Routes>
     <Route index element={<Dashboard/>}/>
     <Route path="cases" element={<Cases/>}/>
     <Route path="analytics" element={<Analytics/>}/>
