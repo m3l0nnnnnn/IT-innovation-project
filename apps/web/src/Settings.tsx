@@ -309,21 +309,23 @@ export default function SettingsPage() {
             </div>
             <div className="account-text-size-slider">
               <span className="account-text-size-a small" aria-hidden="true">A</span>
-              <input
-                type="range"
-                min={0}
-                max={3}
-                step={1}
-                value={account.preferences.fontSize}
-                onChange={event => updatePreference('fontSize', Number(event.target.value) as FontSizeLevel)}
-                aria-label="Text size"
-                aria-valuetext={['Small', 'Standard', 'Large', 'Extra large'][account.preferences.fontSize]}
-                style={{ '--text-size-progress': String(account.preferences.fontSize / 3 * 100) + '%' } as CSSProperties}
-              />
+              <div className="account-text-size-track">
+                <input
+                  type="range"
+                  min={0}
+                  max={3}
+                  step={1}
+                  value={account.preferences.fontSize}
+                  onChange={event => updatePreference('fontSize', Number(event.target.value) as FontSizeLevel)}
+                  aria-label="Text size"
+                  aria-valuetext={['Small', 'Standard', 'Large', 'Extra large'][account.preferences.fontSize]}
+                  style={{ '--text-size-progress': String(account.preferences.fontSize / 3 * 100) + '%' } as CSSProperties}
+                />
+                <div className="account-text-size-ticks" aria-hidden="true">
+                  <span>Small</span><span>Standard</span><span>Large</span><span>Extra large</span>
+                </div>
+              </div>
               <span className="account-text-size-a large" aria-hidden="true">A</span>
-            </div>
-            <div className="account-text-size-ticks" aria-hidden="true">
-              <span>Small</span><span>Standard</span><span>Large</span><span>Extra large</span>
             </div>
             <div className="account-text-size-preview">
               <span>LIVE PREVIEW</span>
