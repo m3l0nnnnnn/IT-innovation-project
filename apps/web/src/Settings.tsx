@@ -1,186 +1,219 @@
-import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
-import { BellRing, CheckCircle2, CircleUserRound, Eye, KeyRound, LockKeyhole, Mail, MonitorCog, RefreshCcw, ShieldCheck, Smartphone, UserRound, VolumeX } from 'lucide-react';
+import { useState, type FormEvent, type ReactNode } from 'react';
+import {
+  BellRing, Check, CheckCircle2, CircleUserRound, KeyRound, LockKeyhole,
+  Mail, Monitor, Moon, RotateCcw, ShieldCheck, Smartphone, Sun, UserRound
+} from 'lucide-react';
+import {
+  applyColorMode, applyDisplayPreferences, SETTINGS_KEY,
+  type ColorMode, type Density
+} from './appearance';
+import './account-settings.css';
 
-type Density = 'comfortable' | 'compact';
+type Section = 'profile' | 'appearance' | 'notifications' | 'security';
 type Preferences = {
   warningUpdates: boolean;
   actionReminders: boolean;
   weeklyDigest: boolean;
   density: Density;
   reduceMotion: boolean;
+  colorMode: ColorMode;
 };
 type DemoAccount = {
   profile: { displayName: string; jobTitle: string };
   preferences: Preferences;
 };
-const STORAGE_KEY = 'estara.demo.account-settings.v1';
-const DEFAULTS: DemoAccount = {
+
+const INITIAL: DemoAccount = {
   profile: { displayName: 'Demo Manager', jobTitle: 'Town Council Operations' },
   preferences: {
     warningUpdates: true,
     actionReminders: true,
     weeklyDigest: false,
     density: 'comfortable',
-    reduceMotion: false
+    reduceMotion: false,
+    colorMode: 'system'
   }
 };
+const sections: { id: Section; title: string; description: string; icon: typeof UserRound }[] = [
+  { id: 'profile', title: 'My profile', description: 'Personal details', icon: UserRound },
+  { id: 'appearance', title: 'Appearance', description: 'Theme and display', icon: Monitor },
+  { id: 'notifications', title: 'Notifications', description: 'Alert preferences', icon: BellRing },
+  { id: 'security', title: 'Security', description: 'Account protection', icon: ShieldCheck }
+];
 
-function loadSettings(): DemoAccount {
+function readAccount(): DemoAccount {
   try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return DEFAULTS;
-    const saved = JSON.parse(raw) as Partial<DemoAccount>;
+    const saved = JSON.parse(localStorage.getItem(SETTINGS_KEY) ?? '{}') as Partial<DemoAccount>;
     const profile = saved?.profile;
     const prefs = saved?.preferences;
     return {
       profile: {
-        displayName: typeof profile?.displayName === 'string' ? profile.displayName.slice(0, 64) : DEFAULTS.profile.displayName,
-        jobTitle: typeof profile?.jobTitle === 'string' ? profile.jobTitle.slice(0, 64) : DEFAULTS.profile.jobTitle
+        displayName: typeof profile?.displayName === 'string' ? profile.displayName.slice(0, 64) : INITIAL.profile.displayName,
+        jobTitle: typeof profile?.jobTitle === 'string' ? profile.jobTitle.slice(0, 64) : INITIAL.profile.jobTitle
       },
       preferences: {
-        warningUpdates: typeof prefs?.warningUpdates === 'boolean' ? prefs.warningUpdates : DEFAULTS.preferences.warningUpdates,
-        actionReminders: typeof prefs?.actionReminders === 'boolean' ? prefs.actionReminders : DEFAULTS.preferences.actionReminders,
-        weeklyDigest: typeof prefs?.weeklyDigest === 'boolean' ? prefs.weeklyDigest : DEFAULTS.preferences.weeklyDigest,
+        warningUpdates: typeof prefs?.warningUpdates === 'boolean' ? prefs.warningUpdates : INITIAL.preferences.warningUpdates,
+        actionReminders: typeof prefs?.actionReminders === 'boolean' ? prefs.actionReminders : INITIAL.preferences.actionReminders,
+        weeklyDigest: typeof prefs?.weeklyDigest === 'boolean' ? prefs.weeklyDigest : INITIAL.preferences.weeklyDigest,
         density: prefs?.density === 'compact' ? 'compact' : 'comfortable',
-        reduceMotion: typeof prefs?.reduceMotion === 'boolean' ? prefs.reduceMotion : DEFAULTS.preferences.reduceMotion
+        reduceMotion: prefs?.reduceMotion === true,
+        colorMode: prefs?.colorMode === 'light' || prefs?.colorMode === 'dark' ? prefs.colorMode : 'system'
       }
     };
   } catch {
-    return DEFAULTS;
+    return INITIAL;
   }
 }
 
-function IconCircle({ children }: { children: ReactNode }) {
-  return <div className="settings-section-icon">{children}</div>;
+function SectionHeading({ icon, title, detail }: { icon: ReactNode; title: string; detail: string }) {
+  return <div className="account-panel-heading"><div className="account-panel-icon">{icon}</div><div><h2>{title}</h2><p>{detail}</p></div></div>;
 }
-function ToggleRow({ label, detail, checked, onChange }: {
-  label: string;
+
+function Toggle({ title, detail, checked, onChange }: {
+  title: string;
   detail: string;
   checked: boolean;
-  onChange: (value: boolean) => void;
+  onChange: (next: boolean) => void;
 }) {
-  return <label className="settings-toggle-row">
-    <span className="settings-row-copy"><strong>{label}</strong><small>{detail}</small></span>
-    <input type="checkbox" className="settings-toggle" checked={checked} onChange={e => onChange(e.target.checked)} />
+  return <label className="account-toggle-row">
+    <span><strong>{title}</strong><small>{detail}</small></span>
+    <input className="account-toggle" type="checkbox" checked={checked} onChange={e => onChange(e.target.checked)}/>
   </label>;
 }
 
+function SecurityRow({ icon, title, detail }: { icon: ReactNode; title: string; detail: string }) {
+  return <div className="account-security-row"><div className="account-security-icon">{icon}</div><div className="account-security-copy"><strong>{title}</strong><small>{detail}</small></div><span className="account-status">Not connected</span></div>;
+}
+
 export default function SettingsPage() {
-  const [account, setAccount] = useState<DemoAccount>(loadSettings);
+  const [section, setSection] = useState<Section>('profile');
+  const [account, setAccount] = useState<DemoAccount>(readAccount);
   const [displayName, setDisplayName] = useState(account.profile.displayName);
   const [jobTitle, setJobTitle] = useState(account.profile.jobTitle);
-  const [notice, setNotice] = useState('');
+  const [feedback, setFeedback] = useState('');
   const [error, setError] = useState('');
 
-  useEffect(() => {
-    document.documentElement.dataset.density = account.preferences.density;
-    document.documentElement.dataset.reduceMotion = String(account.preferences.reduceMotion);
-  }, [account.preferences.density, account.preferences.reduceMotion]);
-
-  function persist(next: DemoAccount, message: string) {
+  function save(next: DemoAccount, message: string): void {
     try {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+      localStorage.setItem(SETTINGS_KEY, JSON.stringify(next));
       setAccount(next);
+      applyColorMode(next.preferences.colorMode);
+      applyDisplayPreferences(next.preferences.density, next.preferences.reduceMotion);
       setError('');
-      setNotice(message);
+      setFeedback(message);
     } catch {
-      setError('Browser storage is unavailable. Your changes were not saved.');
-      setNotice('');
+      setError('Unable to save. Enable browser storage and try again.');
+      setFeedback('');
     }
   }
 
-  function saveProfile(event: FormEvent<HTMLFormElement>) {
+  function updatePreference<K extends keyof Preferences>(key: K, value: Preferences[K]): void {
+    save({
+      ...account,
+      preferences: { ...account.preferences, [key]: value }
+    }, 'Preferences saved to this browser.');
+  }
+
+  function saveProfile(event: FormEvent<HTMLFormElement>): void {
     event.preventDefault();
     const name = displayName.trim();
-    const title = jobTitle.trim();
     if (name.length < 2) {
-      setError('Display name must contain at least two characters.');
-      setNotice('');
+      setError('Display name must have at least two characters.');
+      setFeedback('');
       return;
     }
-    persist({ ...account, profile: { displayName: name, jobTitle: title } }, 'Demo profile saved in this browser.');
+    save({
+      ...account,
+      profile: { displayName: name, jobTitle: jobTitle.trim() }
+    }, 'Demo profile saved to this browser.');
   }
 
-  function updatePreference<K extends keyof Preferences>(key: K, value: Preferences[K]) {
-    persist({ ...account, preferences: { ...account.preferences, [key]: value } }, 'Preference saved in this browser. No real notifications have been enabled.');
-  }
-
-  function resetSettings() {
+  function reset(): void {
     try {
-      window.localStorage.removeItem(STORAGE_KEY);
-      setAccount(DEFAULTS);
-      setDisplayName(DEFAULTS.profile.displayName);
-      setJobTitle(DEFAULTS.profile.jobTitle);
+      localStorage.removeItem(SETTINGS_KEY);
+      setAccount(INITIAL);
+      setDisplayName(INITIAL.profile.displayName);
+      setJobTitle(INITIAL.profile.jobTitle);
+      applyColorMode('system');
+      applyDisplayPreferences('comfortable', false);
       setError('');
-      setNotice('Demo settings reset to defaults.');
+      setFeedback('Browser-only settings restored to defaults.');
     } catch {
-      setError('Could not reset settings because browser storage is unavailable.');
-      setNotice('');
+      setError('Unable to reset settings because browser storage is unavailable.');
+      setFeedback('');
     }
   }
 
-  const initials = account.profile.displayName.trim().split(/\s+/).slice(0, 2).map(w => w[0]?.toUpperCase() ?? '').join('') || 'DM';
-
-  return <div className="settings-page">
-    <header className="page-header">
-      <div><p className="eyebrow">MY WORKSPACE</p><h1>Account settings</h1><p className="subtext">Manage your demo profile, notification preferences, and display options.</p></div>
-      <span className="settings-demo-label"><ShieldCheck size={15}/> Local demo account</span>
-    </header>
-    <div className="settings-info-note">
-      <ShieldCheck size={18}/>
-      <div><strong>Demonstration mode</strong><p>Changes on this page are saved only to this browser. Estara has no live accounts, email delivery, or authentication yet. Do not enter real personal or organisation information.</p></div>
+  const initials = account.profile.displayName.trim().split(/\s+/).slice(0, 2).map(x => x[0]?.toUpperCase() ?? '').join('') || 'DM';
+  return <div className="account-page">
+    <div className="page-header">
+      <div><p className="eyebrow">PERSONAL WORKSPACE</p><h1>Account settings</h1><p className="subtext">Your profile, display and notification preferences in one place.</p></div>
+      <span className="account-demo-chip"><ShieldCheck size={14}/> Demo account</span>
     </div>
-    {error && <div className="settings-feedback settings-feedback-error" role="alert">{error}</div>}
-    {notice && <div className="settings-feedback" role="status"><CheckCircle2 size={17}/>{notice}</div>}
-
-    <div className="settings-layout">
-      <div className="settings-main">
-        <section className="card settings-section">
-          <div className="settings-section-heading"><IconCircle><UserRound size={19}/></IconCircle><div><h2>Personal information</h2><p>Update how your demonstration profile is displayed.</p></div></div>
-          <form onSubmit={saveProfile}>
-            <div className="settings-profile-banner"><div className="settings-avatar" aria-hidden="true">{initials}</div><div><strong>{account.profile.displayName}</strong><p>EMS Manager · Demonstration account</p></div></div>
-            <div className="settings-fields">
-              <label><span>Display name</span><input autoComplete="off" required minLength={2} maxLength={64} value={displayName} onChange={e => setDisplayName(e.target.value)} placeholder="Display name"/></label>
-              <label><span>Job title</span><input autoComplete="off" maxLength={64} value={jobTitle} onChange={e => setJobTitle(e.target.value)} placeholder="Job title"/></label>
-              <label><span>Sign-in email</span><input type="text" readOnly value="Not configured (demo)" aria-description="A real login account has not been created."/></label>
-              <label><span>Account role</span><input type="text" readOnly value="EMS Manager (illustrative)" /></label>
-            </div>
-            <div className="settings-form-footer"><small>Name and job title are browser-only demo fields.</small><button className="primary-button" type="submit">Save profile</button></div>
-          </form>
-        </section>
-
-        <section className="card settings-section">
-          <div className="settings-section-heading"><IconCircle><BellRing size={19}/></IconCircle><div><h2>Notification preferences</h2><p>Set your preferences for future Estara notifications.</p></div></div>
-          <ToggleRow label="Early-warning alerts" detail="Preference for Watch, Warning and Critical alert updates." checked={account.preferences.warningUpdates} onChange={v => updatePreference('warningUpdates', v)}/>
-          <ToggleRow label="Corrective-action reminders" detail="Preference for upcoming deadlines and assigned follow-ups." checked={account.preferences.actionReminders} onChange={v => updatePreference('actionReminders', v)}/>
-          <ToggleRow label="Weekly performance summary" detail="Preference for a weekly KPI and risk digest." checked={account.preferences.weeklyDigest} onChange={v => updatePreference('weeklyDigest', v)}/>
-          <p className="settings-section-hint"><Mail size={15}/> These switches save preferences only. They do not send emails, Teams messages, or push notifications.</p>
-        </section>
-
-        <section className="card settings-section">
-          <div className="settings-section-heading"><IconCircle><MonitorCog size={19}/></IconCircle><div><h2>Display & accessibility</h2><p>Personalise how the Estara interface appears in this browser.</p></div></div>
-          <label className="settings-select-row"><div className="settings-row-copy"><strong>Display density</strong><small>Choose roomier or more compact spacing.</small></div>
-            <select value={account.preferences.density} onChange={e => updatePreference('density', e.target.value as Density)}><option value="comfortable">Comfortable</option><option value="compact">Compact</option></select>
-          </label>
-          <ToggleRow label="Reduce motion" detail="Minimise transitions and animations across the interface." checked={account.preferences.reduceMotion} onChange={v => updatePreference('reduceMotion', v)}/>
-        </section>
-      </div>
-
-      <aside className="settings-aside">
-        <section className="card settings-section">
-          <div className="settings-section-heading"><IconCircle><LockKeyhole size={19}/></IconCircle><div><h2>Security</h2><p>Account protection status.</p></div></div>
-          <div className="settings-security-row"><KeyRound size={18}/><div><strong>Password</strong><small>Requires a login system</small></div><span>Unavailable</span></div>
-          <div className="settings-security-row"><Smartphone size={18}/><div><strong>Two-factor authentication</strong><small>Not implemented in demo</small></div><span>Unavailable</span></div>
-          <div className="settings-security-row"><Eye size={18}/><div><strong>Active sessions</strong><small>No authenticated sessions yet</small></div><span>Demo</span></div>
-          <div className="settings-security-notice"><ShieldCheck size={16}/> Password changes, MFA, sign-out and session revocation must be connected to secure backend authentication before release.</div>
-        </section>
-        <section className="card settings-section">
-          <div className="settings-section-heading"><IconCircle><RefreshCcw size={19}/></IconCircle><div><h2>Reset demo settings</h2><p>Restore profile and preferences to their initial values.</p></div></div>
-          <button type="button" className="settings-outline-button" onClick={resetSettings}>Reset local settings</button>
-          <p className="settings-small-print">This removes only Estara's demo settings from the current browser. It does not affect records or GitHub.</p>
-        </section>
-        <div className="settings-sidebar-foot"><VolumeX size={16}/><span>No real emails, push messages or security changes are performed here.</span></div>
+    <div className="account-layout">
+      <aside className="account-nav-panel">
+        <div className="account-identity"><div className="account-avatar">{initials}</div><div><strong>{account.profile.displayName}</strong><small>EMS Manager · Demo</small></div></div>
+        <nav className="account-sections" aria-label="Account settings sections">
+          {sections.map(item => <button key={item.id} type="button" className={'account-section-link' + (item.id === section ? ' selected' : '')} aria-pressed={item.id === section} onClick={() => { setSection(item.id); setError(''); setFeedback(''); }}><item.icon size={18}/><span><strong>{item.title}</strong><small>{item.description}</small></span></button>)}
+        </nav>
+        <div className="account-nav-foot"><ShieldCheck size={16}/><span>Demo settings are saved only in this browser, not to an EMS account.</span></div>
       </aside>
+      <div className="account-content">
+        {error && <div className="account-message error" role="alert">{error}</div>}
+        {feedback && <div className="account-message" role="status"><CheckCircle2 size={16}/>{feedback}</div>}
+
+        {section === 'profile' && <section className="card account-panel" aria-label="My profile">
+          <SectionHeading icon={<CircleUserRound size={20}/>} title="My profile" detail="Details displayed in your Estara demo workspace."/>
+          <div className="account-profile-overview"><div className="account-avatar large">{initials}</div><div><strong>{account.profile.displayName}</strong><small>Illustrative account · Not signed in</small></div><span className="account-neutral-pill">DEMO</span></div>
+          <form onSubmit={saveProfile}>
+            <div className="account-fields">
+              <label><span>Display name</span><input value={displayName} required minLength={2} maxLength={64} autoComplete="off" onChange={e=>setDisplayName(e.target.value)}/></label>
+              <label><span>Job title</span><input value={jobTitle} maxLength={64} autoComplete="off" onChange={e=>setJobTitle(e.target.value)}/></label>
+              <label><span>Email address</span><input readOnly value="Not configured for demo" aria-label="Email address not configured"/></label>
+              <label><span>Access role</span><input readOnly value="EMS Manager (example)"/></label>
+            </div>
+            <div className="account-actions"><p>Only display name and job title can be saved in this prototype.</p><button type="submit" className="primary-button">Save changes</button></div>
+          </form>
+        </section>}
+
+        {section === 'appearance' && <section className="card account-panel" aria-label="Appearance">
+          <SectionHeading icon={<Monitor size={20}/>} title="Appearance" detail="Choose how Estara looks on this device."/>
+          <div className="account-group-heading"><h3>Colour theme</h3><p>Select a theme or match your computer's appearance automatically.</p></div>
+          <div className="account-themes" role="group" aria-label="Colour theme">
+            {([
+              { id: 'light' as const, title: 'Light', detail: 'Bright and clear', icon: Sun },
+              { id: 'dark' as const, title: 'Dark', detail: 'Easy on the eyes', icon: Moon },
+              { id: 'system' as const, title: 'Follow system', detail: 'Match your device', icon: Monitor }
+            ]).map(mode=><button key={mode.id} type="button" className={'account-theme-option'+(account.preferences.colorMode === mode.id?' active':'')} onClick={()=>updatePreference('colorMode',mode.id)} aria-pressed={account.preferences.colorMode === mode.id}>
+              <div className={'account-theme-preview '+mode.id}><div className="preview-side"/><div className="preview-main"><span/><span/><div><i/><i/></div></div></div>
+              <div className="account-theme-caption"><mode.icon size={17}/><strong>{mode.title}</strong>{account.preferences.colorMode===mode.id&&<Check className="account-theme-check" size={15}/>}</div><small>{mode.detail}</small>
+            </button>)}
+          </div>
+          <div className="account-preference-divider"/>
+          <div className="account-group-heading"><h3>Display preferences</h3><p>Adjust spacing and motion throughout Estara.</p></div>
+          <div className="account-choice-row"><div><strong>Layout density</strong><small>Choose the spacing between interface elements.</small></div><select aria-label="Layout density" value={account.preferences.density} onChange={e => updatePreference('density',e.target.value as Density)}><option value="comfortable">Comfortable</option><option value="compact">Compact</option></select></div>
+          <Toggle title="Reduce motion" detail="Minimise transitions and animations." checked={account.preferences.reduceMotion} onChange={v=>updatePreference('reduceMotion',v)}/>
+          <p className="account-helper">Your choice is applied immediately and remembered in this browser. “Follow system” tracks Windows/macOS theme changes automatically.</p>
+        </section>}
+
+        {section === 'notifications' && <section className="card account-panel" aria-label="Notification preferences">
+          <SectionHeading icon={<BellRing size={20}/>} title="Notification preferences" detail="Decide which updates you would like to receive later."/>
+          <div className="account-feature-note"><Mail size={17}/><p>These are preferences only. Email, Teams and push notifications are not connected in the demo.</p></div>
+          <Toggle title="Early-warning updates" detail="Watch, Warning and Critical risk alerts." checked={account.preferences.warningUpdates} onChange={v=>updatePreference('warningUpdates',v)}/>
+          <Toggle title="Corrective-action reminders" detail="Deadlines and actions needing follow-up." checked={account.preferences.actionReminders} onChange={v=>updatePreference('actionReminders',v)}/>
+          <Toggle title="Weekly performance digest" detail="A summary of performance changes and open risks." checked={account.preferences.weeklyDigest} onChange={v=>updatePreference('weeklyDigest',v)}/>
+        </section>}
+
+        {section === 'security' && <section className="card account-panel" aria-label="Security">
+          <SectionHeading icon={<LockKeyhole size={20}/>} title="Security" detail="Account protection features planned for the full system."/>
+          <div className="account-feature-note"><ShieldCheck size={17}/><p>Estara does not have real user accounts yet. Security controls below are placeholders, not working account actions.</p></div>
+          <SecurityRow icon={<KeyRound size={19}/>} title="Password" detail="Set or change your password after authentication is implemented."/>
+          <SecurityRow icon={<Smartphone size={19}/>} title="Two-factor authentication" detail="Require a second verification step for sign-in."/>
+          <SecurityRow icon={<CircleUserRound size={19}/>} title="Active sessions" detail="Review and revoke active signed-in devices."/>
+        </section>}
+
+        <div className="account-bottom-bar"><span>Estara prototype · Local preferences only</span><button type="button" className="account-reset" onClick={reset}><RotateCcw size={15}/> Reset demo settings</button></div>
+      </div>
     </div>
   </div>;
 }

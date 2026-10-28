@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { Link, NavLink, Route, Routes } from 'react-router-dom';
 import axios from 'axios';
 import { AreaChart, Area, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
@@ -55,16 +55,6 @@ function Sidebar() {
   </aside>;
 }
 function Layout() {
-  useEffect(() => {
-    try {
-      const stored = JSON.parse(window.localStorage.getItem('estara.demo.account-settings.v1') ?? '{}') as { preferences?: { density?: string; reduceMotion?: boolean } };
-      document.documentElement.dataset.density = stored?.preferences?.density === 'compact' ? 'compact' : 'comfortable';
-      document.documentElement.dataset.reduceMotion = String(stored?.preferences?.reduceMotion === true);
-    } catch {
-      document.documentElement.dataset.density = 'comfortable';
-      document.documentElement.dataset.reduceMotion = 'false';
-    }
-  }, []);
   return <div className="app-layout"><Sidebar/><main className="main-area"><div className="topbar"><div>Estara <span>/</span> Management workspace</div><div className="topbar-actions"><span className="demo-pill"><i/> DEMO DATA</span><Link to="/settings" className="topbar-account" aria-label="Open account settings"><CircleUserRound size={18}/><span>Account</span></Link></div></div><div className="content"><Routes>
     <Route index element={<Dashboard/>}/>
     <Route path="cases" element={<Cases/>}/>
