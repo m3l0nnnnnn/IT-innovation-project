@@ -5,6 +5,7 @@ import App from './App';
 import './styles.css';
 import './theme.css';
 import './density.css';
+import './sidebar.css';
 import { initializeAppearance } from './appearance';
 
 initializeAppearance();
