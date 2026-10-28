@@ -84,7 +84,7 @@ export default function ProfileMenu() {
       aria-controls="estara-profile-popover"
     >
       <span className="profile-avatar">{initials}</span>
-      <span className="profile-trigger-name">{profile.displayName}</span>
+      <span className="profile-trigger-details"><span className="profile-trigger-name">{profile.displayName}</span><span className="profile-trigger-role">{profile.jobTitle}</span></span>
       <ChevronDown className={'profile-chevron' + (open ? ' rotated' : '')} size={15}/>
     </button>
     {open && <div id="estara-profile-popover" className="profile-popover" aria-label="Profile options">

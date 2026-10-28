@@ -148,3 +148,39 @@
 :root[data-reduce-motion='true'] .sidebar{
   transition:none!important;
 }
+
+
+/* Keep the account pinned to the bottom of the vertical sidebar. */
+.sidebar{
+  overflow:visible; /* Do not clip the account popover outside collapsed width. */
+}
+.sidebar-profile-area{
+  margin-top:auto;
+  padding-top:13px;
+  border-top:1px solid #2a4b61;
+  min-width:0;
+}
+.sidebar.sidebar-collapsed .sidebar-profile-area{
+  display:flex;
+  justify-content:center;
+  padding-top:10px;
+}
+.sidebar.sidebar-collapsed .sidebar-profile-area .profile-menu-root{
+  width:100%;
+}
+/* Preserve visible focus outlines and the popover on desktop. */
+@media(max-width:600px){
+  .sidebar-profile-area{
+    margin-top:5px;
+    padding:6px 0 0;
+    display:flex;
+    justify-content:flex-end;
+  }
+  .sidebar.sidebar-collapsed .sidebar-profile-area{
+    justify-content:flex-end;
+    padding-top:6px;
+  }
+  .sidebar-profile-area .profile-menu-root{
+    width:auto;
+  }
+}
