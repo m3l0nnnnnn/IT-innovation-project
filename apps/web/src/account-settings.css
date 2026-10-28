@@ -1,8 +1,5 @@
 /* Account settings: compact navigation and one focused panel at a time. */
 .topbar-actions{display:flex;align-items:center;gap:12px}
-.topbar-account{display:flex;align-items:center;gap:7px;padding:8px 12px;border-radius:9px;border:1px solid var(--ui-border,#e1e8ee);color:var(--ui-text,#3d5b71)!important;font-size:12px;font-weight:750;background:var(--ui-card,#fff)}
-.topbar-account:hover{background:var(--ui-hover,#eef6f7)}
-.topbar-account span{margin:0!important;color:inherit}
 .account-page{max-width:1260px}
 .account-demo-chip{display:inline-flex;align-items:center;gap:7px;background:var(--ui-soft,#edf6f7);color:var(--ui-accent,#178b99);font-size:11px;font-weight:750;padding:10px 13px;border-radius:9px;white-space:nowrap}
 .account-layout{display:grid;grid-template-columns:240px minmax(0,1fr);align-items:start;gap:22px}

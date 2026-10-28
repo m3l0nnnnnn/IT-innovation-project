@@ -1,4 +1,5 @@
 import { useState, type FormEvent, type ReactNode } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   BellRing, Check, CheckCircle2, CircleUserRound, KeyRound, LockKeyhole,
   Mail, Monitor, Moon, RotateCcw, ShieldCheck, Smartphone, Sun, UserRound, Rows3, List
@@ -86,7 +87,12 @@ function SecurityRow({ icon, title, detail }: { icon: ReactNode; title: string; 
 }
 
 export default function SettingsPage() {
-  const [section, setSection] = useState<Section>('profile');
+  const [sectionParams, setSectionParams] = useSearchParams();
+  const requestedSection = sectionParams.get('section');
+  const section: Section =
+    requestedSection === 'appearance' || requestedSection === 'notifications' || requestedSection === 'security'
+      ? requestedSection
+      : 'profile';
   const [account, setAccount] = useState<DemoAccount>(readAccount);
   const [displayName, setDisplayName] = useState(account.profile.displayName);
   const [jobTitle, setJobTitle] = useState(account.profile.jobTitle);
@@ -97,6 +103,7 @@ export default function SettingsPage() {
     try {
       localStorage.setItem(SETTINGS_KEY, JSON.stringify(next));
       setAccount(next);
+      window.dispatchEvent(new Event('estara-account-updated'));
       applyColorMode(next.preferences.colorMode);
       applyDisplayPreferences(next.preferences.density, next.preferences.reduceMotion);
       setError('');
@@ -132,6 +139,7 @@ export default function SettingsPage() {
     try {
       localStorage.removeItem(SETTINGS_KEY);
       setAccount(INITIAL);
+      window.dispatchEvent(new Event('estara-account-updated'));
       setDisplayName(INITIAL.profile.displayName);
       setJobTitle(INITIAL.profile.jobTitle);
       applyColorMode('system');
@@ -154,7 +162,7 @@ export default function SettingsPage() {
       <aside className="account-nav-panel">
         <div className="account-identity"><div className="account-avatar">{initials}</div><div><strong>{account.profile.displayName}</strong><small>EMS Manager · Demo</small></div></div>
         <nav className="account-sections" aria-label="Account settings sections">
-          {sections.map(item => <button key={item.id} type="button" className={'account-section-link' + (item.id === section ? ' selected' : '')} aria-pressed={item.id === section} onClick={() => { setSection(item.id); setError(''); setFeedback(''); }}><item.icon size={18}/><span><strong>{item.title}</strong><small>{item.description}</small></span></button>)}
+          {sections.map(item => <button key={item.id} type="button" className={'account-section-link' + (item.id === section ? ' selected' : '')} aria-pressed={item.id === section} onClick={() => { setSectionParams({ section: item.id }); setError(''); setFeedback(''); }}><item.icon size={18}/><span><strong>{item.title}</strong><small>{item.description}</small></span></button>)}
         </nav>
         <div className="account-nav-foot"><ShieldCheck size={16}/><span>Demo settings are saved only in this browser, not to an EMS account.</span></div>
       </aside>
