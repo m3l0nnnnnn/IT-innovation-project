@@ -443,15 +443,18 @@ cp .env.example .env    # then put the real database password in .env
 
 ### Database (Supabase)
 
-The app connects through the `DATABASE_URL` variable in `.env`:
+The app connects through two variables in `.env`:
 
 ```
-DATABASE_URL=postgresql://postgres:[YOUR-PASSWORD]@db.mazjfcbhnxqmgadwklel.supabase.co:5432/postgres
+DATABASE_URL=postgresql://postgres.mazjfcbhnxqmgadwklel:YOUR_PASSWORD@aws-0-ap-northeast-2.pooler.supabase.com:5432/postgres
+DATABASE_CA_CERT=certs/prod-ca-2021.crt
 ```
 
 - Ask Charles for the database password. **Never commit `.env`** or paste the password into code, issues or chat. `.gitignore` already excludes `.env`.
+- Replace `YOUR_PASSWORD` with the password itself, **without square brackets**.
 - If the password contains special characters, percent-encode them in the URL (e.g. `@` → `%40`, `#` → `%23`).
-- If the connection times out on your network, use the **Session pooler** connection string from Supabase → **Connect** instead. The direct connection above needs IPv6, which many home and school networks don't support.
+- We use the **Session pooler** URL because it works over IPv4. The direct `db.mazjfcbhnxqmgadwklel.supabase.co` host is IPv6-only, and most home, school and hotspot networks can't reach it.
+- SSL is verified against Supabase's CA certificate in [`certs/prod-ca-2021.crt`](certs/prod-ca-2021.crt). It's a public certificate and safe to commit. Pass it to the Postgres client as `ssl: { ca }`. **Don't** switch verification off with `rejectUnauthorized: false`.
 
 ### Seed data
 
