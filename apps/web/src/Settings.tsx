@@ -269,8 +269,9 @@ export default function SettingsPage() {
               <label className={'account-photo-upload' + (uploadingPhoto ? ' busy' : '')} htmlFor="estara-profile-photo-input">
                 <Upload size={15}/>{uploadingPhoto ? 'Processing…' : profilePhoto ? 'Change photo' : 'Upload photo'}
               </label>
-              {profilePhoto && <button className="account-photo-remove" type="button" disabled={uploadingPhoto} onClick={removePhoto}><Trash2 size={15}/> Remove</button>}
-              {photoHasUnsavedChanges && <button className="account-photo-remove" type="button" disabled={uploadingPhoto} onClick={discardPhotoChange}>Discard</button>}
+              {photoHasUnsavedChanges
+                ? <button className="account-photo-remove" type="button" disabled={uploadingPhoto} onClick={discardPhotoChange}>Discard</button>
+                : profilePhoto && <button className="account-photo-remove" type="button" disabled={uploadingPhoto} onClick={removePhoto}><Trash2 size={15}/> Remove</button>}
             </div>
             {photoHasUnsavedChanges && <p className="account-photo-pending" role="status">Photo change not saved yet. Click <strong>Save changes</strong> below to apply it.</p>}
           </div>
