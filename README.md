@@ -432,13 +432,26 @@ The AI assistant only interprets and summarises. It does **not** set official KP
 
 > No code has been committed yet. The setup steps below will be completed once the project is scaffolded.
 
-**Prerequisites:** Node.js (LTS), PostgreSQL and Git.
+**Prerequisites:** Node.js (LTS) and Git. The database is hosted on **Supabase** (PostgreSQL), so you don't need a local Postgres install.
 
 ```bash
-git clone <repo-url>
+git clone https://github.com/m3l0nnnnnn/IT-innovation-project.git
 cd IT-innovation-project
-# install, database setup and run steps go here
+cp .env.example .env    # then put the real database password in .env
+# install and run steps go here
 ```
+
+### Database (Supabase)
+
+The app connects through the `DATABASE_URL` variable in `.env`:
+
+```
+DATABASE_URL=postgresql://postgres:[YOUR-PASSWORD]@db.mazjfcbhnxqmgadwklel.supabase.co:5432/postgres
+```
+
+- Ask Charles for the database password. **Never commit `.env`** or paste the password into code, issues or chat. `.gitignore` already excludes `.env`.
+- If the password contains special characters, percent-encode them in the URL (e.g. `@` → `%40`, `#` → `%23`).
+- If the connection times out on your network, use the **Session pooler** connection string from Supabase → **Connect** instead. The direct connection above needs IPv6, which many home and school networks don't support.
 
 ### Seed data
 
