@@ -18,3 +18,7 @@ Suggested workflow: review this branch with a pull request, then merge to `main`
 For future database setup, copy `apps/api/.env.example` to `apps/api/.env` and supply approved local database credentials. Never commit `.env` or secrets.
 
 Current modules: Phoebe (dashboard/reports), Charles (cases), Joel (KPI analytics), Brina (alerts), Maahirah (corrective actions), shared AI placeholder.
+
+## Account settings (demo)
+
+The **Account Settings** page (`/settings`) supports browser-local profile labels, warning/reminder/digest preferences, display density and reduced motion. It uses `localStorage` in the current browser, not a real account database. **No email or push notifications are sent**. Passwords, MFA, sessions, sign-out and real profile changes require an authentication service and backend permission checks, which are not included in this skeleton. Do not enter genuine user or resident data in this prototype.

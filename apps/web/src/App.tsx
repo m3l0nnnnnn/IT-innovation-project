@@ -2,7 +2,8 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { Link, NavLink, Route, Routes } from 'react-router-dom';
 import axios from 'axios';
 import { AreaChart, Area, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import { LayoutDashboard, MessageSquare, BarChart3, BellRing, ClipboardList, FileText, Bot, Search, Download, TrendingDown, TrendingUp, ShieldCheck, ArrowRight, AlertTriangle, Building2 } from 'lucide-react';
+import { LayoutDashboard, MessageSquare, BarChart3, BellRing, ClipboardList, FileText, Bot, Search, Download, TrendingDown, TrendingUp, ShieldCheck, ArrowRight, AlertTriangle, Building2, Settings, CircleUserRound } from 'lucide-react';
+import SettingsPage from './Settings';
 
 type Case = { id:string; council:string; location:string; category:string; received:string; status:string; officer:string };
 type Kpi = { id:string; name:string; unit:string; value:number; target:number; trend:number; points:number[] };
@@ -42,7 +43,8 @@ const nav = [
   {to:'/alerts',label:'Early Warnings',icon:BellRing,end:false},
   {to:'/actions',label:'Corrective Actions',icon:ClipboardList,end:false},
   {to:'/reports',label:'Reports & Scores',icon:FileText,end:false},
-  {to:'/assistant',label:'AI Assistant',icon:Bot,end:false}
+  {to:'/assistant',label:'AI Assistant',icon:Bot,end:false},
+  {to:'/settings',label:'Account Settings',icon:Settings,end:false}
 ];
 function Sidebar() {
   return <aside className="sidebar">
@@ -53,7 +55,17 @@ function Sidebar() {
   </aside>;
 }
 function Layout() {
-  return <div className="app-layout"><Sidebar/><main className="main-area"><div className="topbar"><div>Estara <span>/</span> Management workspace</div><span className="demo-pill"><i/> DEMO DATA</span></div><div className="content"><Routes>
+  useEffect(() => {
+    try {
+      const stored = JSON.parse(window.localStorage.getItem('estara.demo.account-settings.v1') ?? '{}') as { preferences?: { density?: string; reduceMotion?: boolean } };
+      document.documentElement.dataset.density = stored?.preferences?.density === 'compact' ? 'compact' : 'comfortable';
+      document.documentElement.dataset.reduceMotion = String(stored?.preferences?.reduceMotion === true);
+    } catch {
+      document.documentElement.dataset.density = 'comfortable';
+      document.documentElement.dataset.reduceMotion = 'false';
+    }
+  }, []);
+  return <div className="app-layout"><Sidebar/><main className="main-area"><div className="topbar"><div>Estara <span>/</span> Management workspace</div><div className="topbar-actions"><span className="demo-pill"><i/> DEMO DATA</span><Link to="/settings" className="topbar-account" aria-label="Open account settings"><CircleUserRound size={18}/><span>Account</span></Link></div></div><div className="content"><Routes>
     <Route index element={<Dashboard/>}/>
     <Route path="cases" element={<Cases/>}/>
     <Route path="analytics" element={<Analytics/>}/>
@@ -61,6 +73,7 @@ function Layout() {
     <Route path="actions" element={<Actions/>}/>
     <Route path="reports" element={<Reports/>}/>
     <Route path="assistant" element={<Assistant/>}/>
+    <Route path="settings" element={<SettingsPage/>}/>
     <Route path="*" element={<div className="card">Page not found. <Link to="/">Return to dashboard</Link>.</div>}/>
   </Routes><footer>Estara prototype · All records and thresholds shown are illustrative, not EMS production data.</footer></div></main></div>;
 }
