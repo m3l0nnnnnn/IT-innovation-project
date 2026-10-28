@@ -1,7 +1,7 @@
 import { useState, type FormEvent, type ReactNode } from 'react';
 import {
   BellRing, Check, CheckCircle2, CircleUserRound, KeyRound, LockKeyhole,
-  Mail, Monitor, Moon, RotateCcw, ShieldCheck, Smartphone, Sun, UserRound
+  Mail, Monitor, Moon, RotateCcw, ShieldCheck, Smartphone, Sun, UserRound, Rows3, List
 } from 'lucide-react';
 import {
   applyColorMode, applyDisplayPreferences, SETTINGS_KEY,
@@ -191,7 +191,30 @@ export default function SettingsPage() {
           </div>
           <div className="account-preference-divider"/>
           <div className="account-group-heading"><h3>Display preferences</h3><p>Adjust spacing and motion throughout Estara.</p></div>
-          <div className="account-choice-row"><div><strong>Layout density</strong><small>Choose the spacing between interface elements.</small></div><select aria-label="Layout density" value={account.preferences.density} onChange={e => updatePreference('density',e.target.value as Density)}><option value="comfortable">Comfortable</option><option value="compact">Compact</option></select></div>
+          <div className="account-density-heading"><div><h3>Layout density</h3><p>Choose how much information fits on each page.</p></div></div>
+          <div className="account-density-options" role="group" aria-label="Layout density">
+            {([
+              { id: 'comfortable' as const, label: 'Comfortable', detail: 'Spacious and easy to scan', icon: Rows3 },
+              { id: 'compact' as const, label: 'Compact', detail: 'More data with less scrolling', icon: List }
+            ]).map(option => (
+              <button key={option.id} type="button"
+                className={'account-density-option' + (account.preferences.density === option.id ? ' active' : '')}
+                aria-pressed={account.preferences.density === option.id}
+                onClick={() => updatePreference('density', option.id)}>
+                <span className={'account-density-visual ' + option.id} aria-hidden="true">
+                  <span className="density-visual-side"/>
+                  <span className="density-visual-main">
+                    <i/><i/><i/>
+                  </span>
+                </span>
+                <span className="account-density-info">
+                  <option.icon size={18}/>
+                  <span><strong>{option.label}</strong><small>{option.detail}</small></span>
+                  {account.preferences.density === option.id && <span className="account-density-selected"><Check size={14}/></span>}
+                </span>
+              </button>
+            ))}
+          </div>
           <Toggle title="Reduce motion" detail="Minimise transitions and animations." checked={account.preferences.reduceMotion} onChange={v=>updatePreference('reduceMotion',v)}/>
           <p className="account-helper">Your choice is applied immediately and remembered in this browser. “Follow system” tracks Windows/macOS theme changes automatically.</p>
         </section>}

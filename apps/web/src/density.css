@@ -1,0 +1,123 @@
+/*
+  App-wide density scales.
+  Comfortable deliberately adds breathing room for reading.
+  Compact cuts vertical rhythm, card interiors, row heights and nav spacing.
+*/
+:root{
+  --density-page-top:37px;
+  --density-page-bottom:24px;
+  --density-card-pad:25px;
+  --density-grid-gap:22px;
+  --density-head-gap:30px;
+  --density-stat-icon-gap:21px;
+  --density-table-y:17px;
+  --density-list-y:14px;
+  --density-nav-y:13px;
+  --density-chart-height:250px;
+  --density-chart-large:350px;
+}
+:root[data-density='compact']{
+  --density-page-top:15px;
+  --density-page-bottom:10px;
+  --density-card-pad:13px;
+  --density-grid-gap:10px;
+  --density-head-gap:12px;
+  --density-stat-icon-gap:8px;
+  --density-table-y:8px;
+  --density-list-y:7px;
+  --density-nav-y:8px;
+  --density-chart-height:205px;
+  --density-chart-large:275px;
+}
+/* Main page structure and cards */
+:root[data-density] .content{padding-top:var(--density-page-top);padding-bottom:var(--density-page-bottom)}
+:root[data-density] .page-header{margin-bottom:var(--density-head-gap)}
+:root[data-density] .card{padding:var(--density-card-pad)}
+:root[data-density] .stat-grid,
+:root[data-density] .metric-grid,
+:root[data-density] .action-grid,
+:root[data-density] .report-grid{gap:var(--density-grid-gap);margin-bottom:var(--density-grid-gap)}
+:root[data-density] .dashboard-grid{gap:var(--density-grid-gap);margin-bottom:var(--density-grid-gap)}
+:root[data-density] .stat-icon{margin-bottom:var(--density-stat-icon-gap)}
+:root[data-density] .card-head{margin-bottom:calc(var(--density-grid-gap)*.85)}
+:root[data-density] .nav-item{padding:var(--density-nav-y) 14px}
+:root[data-density] .list-row,
+:root[data-density] .score-row{padding:var(--density-list-y) 0}
+:root[data-density] th{padding-top:calc(var(--density-table-y)*.8);padding-bottom:calc(var(--density-table-y)*.8)}
+:root[data-density] td{padding-top:var(--density-table-y);padding-bottom:var(--density-table-y)}
+:root[data-density] .chart{height:var(--density-chart-height)}
+:root[data-density] .chart.large{height:var(--density-chart-large)}
+:root[data-density] .metric{gap:calc(var(--density-grid-gap)*.65)}
+:root[data-density] .action-details{margin-top:var(--density-grid-gap);padding-top:calc(var(--density-grid-gap)*.8)}
+:root[data-density] .alert-card{gap:calc(var(--density-grid-gap)*.7)}
+:root[data-density] .filter-bar{margin-bottom:calc(var(--density-grid-gap)*.8)}
+:root[data-density] .table-tools{margin-bottom:calc(var(--density-grid-gap)*.7)}
+/* Comfortable: visually relaxed dashboard and forms */
+:root[data-density='comfortable'] .stat strong{font-size:34px}
+:root[data-density='comfortable'] .metric strong{font-size:29px}
+:root[data-density='comfortable'] .kpi-stack{gap:22px}
+:root[data-density='comfortable'] .account-panel{padding:30px 32px}
+:root[data-density='comfortable'] .account-nav-panel{padding:17px}
+:root[data-density='comfortable'] .account-section-link{padding:13px 12px}
+:root[data-density='comfortable'] .account-profile-overview{padding:18px;margin-bottom:28px}
+:root[data-density='comfortable'] .account-toggle-row,
+:root[data-density='comfortable'] .account-choice-row{padding:19px 0}
+:root[data-density='comfortable'] .account-fields input{padding:13px 14px}
+/* Compact: significant reduction in scrolling / whitespace */
+:root[data-density='compact'] .page-header h1{font-size:clamp(23px,2vw,28px)}
+:root[data-density='compact'] .subtext{font-size:12px;line-height:1.45}
+:root[data-density='compact'] .stat strong{font-size:25px}
+:root[data-density='compact'] .metric strong{font-size:24px}
+:root[data-density='compact'] .stat-icon{width:30px;height:30px}
+:root[data-density='compact'] .stat-icon svg{width:17px;height:17px}
+:root[data-density='compact'] .stat small{margin-top:4px}
+:root[data-density='compact'] .kpi-stack{gap:10px}
+:root[data-density='compact'] .kpi-item small{font-size:9px}
+:root[data-density='compact'] .progress{margin:6px 0 4px;height:5px}
+:root[data-density='compact'] .card-head p{margin-top:3px}
+:root[data-density='compact'] .round-icon{width:29px;height:29px}
+:root[data-density='compact'] .round-icon svg{width:14px;height:14px}
+:root[data-density='compact'] .search{padding:8px 10px}
+:root[data-density='compact'] .filter{padding:8px 12px}
+:root[data-density='compact'] .alert-card h2{margin:5px 0}
+:root[data-density='compact'] .alert-card p{line-height:1.4}
+:root[data-density='compact'] .action h2{margin:9px 0 5px}
+:root[data-density='compact'] .action-details{gap:7px}
+:root[data-density='compact'] .report strong{font-size:31px;margin:12px 0 6px}
+:root[data-density='compact'] .account-panel{padding:17px 19px;min-height:310px}
+:root[data-density='compact'] .account-panel-heading{margin-bottom:17px}
+:root[data-density='compact'] .account-profile-overview{padding:9px 11px;margin-bottom:15px}
+:root[data-density='compact'] .account-fields{gap:11px}
+:root[data-density='compact'] .account-fields input{padding:8px 10px}
+:root[data-density='compact'] .account-actions{margin-top:13px;padding-top:12px}
+:root[data-density='compact'] .account-nav-panel{padding:9px}
+:root[data-density='compact'] .account-identity{padding-bottom:10px}
+:root[data-density='compact'] .account-sections{gap:2px;padding-top:8px}
+:root[data-density='compact'] .account-section-link{padding:8px 9px}
+:root[data-density='compact'] .account-profile-overview .account-avatar{width:44px;height:44px}
+:root[data-density='compact'] .account-toggle-row,
+:root[data-density='compact'] .account-choice-row{padding:10px 0}
+:root[data-density='compact'] .account-preference-divider{margin:16px 0}
+:root[data-density='compact'] .account-themes{gap:9px}
+:root[data-density='compact'] .account-theme-preview{height:75px}
+:root[data-density='compact'] .account-density-visual{height:70px}
+:root[data-density='compact'] .account-security-row{padding:11px 2px}
+:root[data-density='compact'] .account-layout{gap:12px}
+:root[data-density='compact'] .account-theme-option>small{margin:4px 0}
+:root[data-density='compact'] .account-helper{margin:9px 0 0}
+:root[data-density='compact'] .topbar{height:58px}
+:root[data-density='compact'] footer{margin:18px 0 8px}
+/* Honor the smaller viewport; density must not break navigation or cards. */
+@media(max-width:850px){
+  :root[data-density='compact'] .account-panel{min-height:0}
+}
+@media(max-width:620px){
+  :root[data-density='comfortable'] .content{padding-top:24px}
+  :root[data-density='comfortable'] .stat strong{font-size:28px}
+  :root[data-density='comfortable'] .account-panel{padding:20px}
+  :root[data-density='compact'] .content{padding-top:13px}
+  :root[data-density='compact'] .card{padding:11px}
+  :root[data-density='compact'] .account-panel{padding:13px}
+  :root[data-density='compact'] .stat-grid,
+  :root[data-density='compact'] .metric-grid{gap:8px}
+}
