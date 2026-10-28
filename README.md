@@ -430,25 +430,35 @@ The AI assistant only interprets and summarises. It does **not** set official KP
 
 ## Getting started
 
-> No code has been committed yet. The setup steps below will be completed once the project is scaffolded.
-
-**Prerequisites:** Node.js (LTS) and Git. The database is hosted on **Supabase** (PostgreSQL), so you don't need a local Postgres install.
+**Prerequisites:** Node.js 22+ and Git. The database is hosted on **Supabase** (PostgreSQL), so you don't need a local Postgres install.
 
 ```bash
 git clone https://github.com/m3l0nnnnnn/IT-innovation-project.git
 cd IT-innovation-project
-cp .env.example .env    # then put the real database password in .env
-# install and run steps go here
+npm install
+cp apps/api/.env.example apps/api/.env    # then put the real database password in apps/api/.env
+npm run db:ping                           # should print "Connected to postgres: PostgreSQL ..."
+npm run dev                               # web on http://localhost:5173, API on http://localhost:4000
 ```
+
+See [apps/README.md](apps/README.md) for more on the app skeleton.
 
 ### Database (Supabase)
 
-The app connects through two variables in `.env`:
+The API connects through two variables in **`apps/api/.env`**:
 
 ```
 DATABASE_URL=postgresql://postgres.mazjfcbhnxqmgadwklel:YOUR_PASSWORD@aws-0-ap-northeast-2.pooler.supabase.com:5432/postgres
-DATABASE_CA_CERT=certs/prod-ca-2021.crt
+DATABASE_CA_CERT=../../certs/prod-ca-2021.crt
 ```
+
+The database client lives in [apps/api/src/db/index.ts](apps/api/src/db/index.ts). Import `db` from there to run Drizzle queries.
+
+| Command (from the repo root) | What it does |
+| --- | --- |
+| `npm run db:ping` | Checks that your `.env` can reach the database |
+| `npm run db:generate` | Creates a migration from changes to `apps/api/src/db/schema.ts` |
+| `npm run db:migrate` | Applies pending migrations to Supabase |
 
 - Ask Charles for the database password. **Never commit `.env`** or paste the password into code, issues or chat. `.gitignore` already excludes `.env`.
 - Replace `YOUR_PASSWORD` with the password itself, **without square brackets**.
