@@ -91,7 +91,8 @@ export default function SettingsPage() {
   const [account, setAccount] = useState<DemoAccount>(readAccount);
   const [displayName, setDisplayName] = useState(account.profile.displayName);
   const [jobTitle, setJobTitle] = useState(account.profile.jobTitle);
-  const [profilePhoto, setProfilePhoto] = useState<string | null>(getSavedProfilePhoto);
+  const [savedPhoto, setSavedPhoto] = useState<string | null>(getSavedProfilePhoto);
+  const [profilePhoto, setProfilePhoto] = useState<string | null>(savedPhoto);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const [feedback, setFeedback] = useState('');
@@ -105,11 +106,8 @@ export default function SettingsPage() {
     setFeedback('');
     try {
       const resized = await makeProfilePhoto(file);
-      // Never persist the uncompressed original image.
-      localStorage.setItem(PROFILE_PHOTO_KEY, resized);
+      // Preview the processed image. Only Save changes persists it.
       setProfilePhoto(resized);
-      window.dispatchEvent(new Event('estara-account-updated'));
-      setFeedback('Profile photo saved to this browser.');
     } catch (problem) {
       setError(problem instanceof Error ? problem.message : 'Could not save the selected photo.');
     } finally {
@@ -119,16 +117,15 @@ export default function SettingsPage() {
   }
 
   function removePhoto(): void {
-    try {
-      localStorage.removeItem(PROFILE_PHOTO_KEY);
-      setProfilePhoto(null);
-      window.dispatchEvent(new Event('estara-account-updated'));
-      setError('');
-      setFeedback('Profile photo removed. Your initials will be shown instead.');
-    } catch {
-      setError('Unable to remove the photo from browser storage.');
-      setFeedback('');
-    }
+    setProfilePhoto(null);
+    setError('');
+    setFeedback('');
+  }
+
+  function discardPhotoChange(): void {
+    setProfilePhoto(savedPhoto);
+    setError('');
+    setFeedback('');
   }
 
   function save(next: DemoAccount, message: string): void {
@@ -160,10 +157,49 @@ export default function SettingsPage() {
       setFeedback('');
       return;
     }
-    save({
+    if (uploadingPhoto) {
+      setError('Finish processing the photo before saving.');
+      return;
+    }
+
+    const next: DemoAccount = {
       ...account,
       profile: { displayName: name, jobTitle: jobTitle.trim() }
-    }, 'Demo profile saved to this browser.');
+    };
+    try {
+      // Keep the sidebar unchanged until both the profile and photo are saved.
+      // Restore the previous photo if the profile write fails.
+      const previousPhoto = localStorage.getItem(PROFILE_PHOTO_KEY);
+      if (profilePhoto) {
+        localStorage.setItem(PROFILE_PHOTO_KEY, profilePhoto);
+      } else {
+        localStorage.removeItem(PROFILE_PHOTO_KEY);
+      }
+
+      try {
+        localStorage.setItem(SETTINGS_KEY, JSON.stringify(next));
+      } catch (writeError) {
+        try {
+          if (previousPhoto !== null) {
+            localStorage.setItem(PROFILE_PHOTO_KEY, previousPhoto);
+          } else {
+            localStorage.removeItem(PROFILE_PHOTO_KEY);
+          }
+        } catch {
+          // Storage failure; report the error and leave draft values available.
+        }
+        throw writeError;
+      }
+
+      setAccount(next);
+      setSavedPhoto(profilePhoto);
+      window.dispatchEvent(new Event('estara-account-updated'));
+      setError('');
+      setFeedback('Profile changes saved to this browser.');
+    } catch {
+      setError('Unable to save your profile. Enable browser storage and try again.');
+      setFeedback('');
+    }
   }
 
   function reset(): void {
@@ -171,6 +207,7 @@ export default function SettingsPage() {
       localStorage.removeItem(SETTINGS_KEY);
       localStorage.removeItem(PROFILE_PHOTO_KEY);
       setProfilePhoto(null);
+      setSavedPhoto(null);
       setAccount(INITIAL);
       window.dispatchEvent(new Event('estara-account-updated'));
       setDisplayName(INITIAL.profile.displayName);
@@ -184,6 +221,7 @@ export default function SettingsPage() {
     }
   }
 
+  const photoHasUnsavedChanges = profilePhoto !== savedPhoto;
   const initials = account.profile.displayName.trim().split(/\s+/).slice(0, 2).map(x => x[0]?.toUpperCase() ?? '').join('') || 'DM';
   return <div className="account-page">
     <div className="page-header">
@@ -192,7 +230,7 @@ export default function SettingsPage() {
     </div>
     <div className="account-layout">
       <aside className="account-nav-panel">
-        <div className="account-identity"><div className="account-avatar">{profilePhoto ? <img className="account-avatar-image" src={profilePhoto} alt=""/> : initials}</div><div><strong>{account.profile.displayName}</strong><small>EMS Manager · Demo</small></div></div>
+        <div className="account-identity"><div className="account-avatar">{savedPhoto ? <img className="account-avatar-image" src={savedPhoto} alt=""/> : initials}</div><div><strong>{account.profile.displayName}</strong><small>EMS Manager · Demo</small></div></div>
         <nav className="account-sections" aria-label="Account settings sections">
           {sections.map(item => <button key={item.id} type="button" className={'account-section-link' + (item.id === section ? ' selected' : '')} aria-pressed={item.id === section} onClick={() => { setSectionParams({ section: item.id }); setError(''); setFeedback(''); }}><item.icon size={18}/><span><strong>{item.title}</strong><small>{item.description}</small></span></button>)}
         </nav>
@@ -210,7 +248,7 @@ export default function SettingsPage() {
             <div className="account-photo-copy">
               <strong>Profile picture</strong>
               <small>JPG, PNG or WebP · Maximum 5 MB · Automatically cropped to a square</small>
-              <small>Saved only in this browser; no image is uploaded to Estara's server.</small>
+              <small>Preview first, then click Save changes. Photos stay in this browser.</small>
             </div>
             <div className="account-photo-controls">
               <input
@@ -227,7 +265,9 @@ export default function SettingsPage() {
                 <Upload size={15}/>{uploadingPhoto ? 'Processing…' : profilePhoto ? 'Change photo' : 'Upload photo'}
               </label>
               {profilePhoto && <button className="account-photo-remove" type="button" disabled={uploadingPhoto} onClick={removePhoto}><Trash2 size={15}/> Remove</button>}
+              {photoHasUnsavedChanges && <button className="account-photo-remove" type="button" disabled={uploadingPhoto} onClick={discardPhotoChange}>Discard</button>}
             </div>
+            {photoHasUnsavedChanges && <p className="account-photo-pending" role="status">Photo change not saved yet. Click <strong>Save changes</strong> below to apply it.</p>}
           </div>
           <form onSubmit={saveProfile}>
             <div className="account-fields">
@@ -236,7 +276,7 @@ export default function SettingsPage() {
               <label><span>Email address</span><input readOnly value="Not configured for demo" aria-label="Email address not configured"/></label>
               <label><span>Access role</span><input readOnly value="EMS Manager (example)"/></label>
             </div>
-            <div className="account-actions"><p>Profile details and photo are saved locally on this device.</p><button type="submit" className="primary-button">Save changes</button></div>
+            <div className="account-actions"><p>Profile details and photo are saved together when you click Save changes.</p><button type="submit" className="primary-button" disabled={uploadingPhoto}>Save changes</button></div>
           </form>
         </section>}
 
