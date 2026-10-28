@@ -459,6 +459,7 @@ The database client lives in [apps/api/src/db/index.ts](apps/api/src/db/index.ts
 | `npm run db:ping` | Checks that your `.env` can reach the database |
 | `npm run db:generate` | Creates a migration from changes to `apps/api/src/db/schema.ts` |
 | `npm run db:migrate` | Applies pending migrations to Supabase |
+| `npm run db:seed` | Replaces all feedback cases with ~13 months of fictional demo data (see below) |
 
 - Ask Charles for the database password. **Never commit `.env`** or paste the password into code, issues or chat. `.gitignore` already excludes `.env`.
 - Replace `YOUR_PASSWORD` with the password itself, **without square brackets**.
@@ -468,7 +469,20 @@ The database client lives in [apps/api/src/db/index.ts](apps/api/src/db/index.ts
 
 ### Seed data
 
-Forecasting and the AI summaries need enough history to be useful, so we will generate **12+ months of realistic sample data for each Town Council**, covering cases, report scores, alerts and actions.
+Forecasting and the AI summaries need enough history to be useful. `npm run db:seed` ([seed.ts](apps/api/src/db/seed.ts)) creates 5 fictional Town Councils and about **8,500 feedback cases over the last 13 months**. It always produces the same data, with dates relative to today, and re-running it replaces the cases.
+
+The data has these patterns built in for the other modules to find:
+
+| Pattern | Where | Useful for |
+| --- | --- | --- |
+| Closure and acknowledgement times get steadily worse over the last 4 months | North District | KPI trends, days-to-fail forecast, alerts |
+| Slow until ~3 months ago, then improves sharply | East District | "Did it work?" effectiveness check |
+| Roughly on target | Central, West, South | Comparison / benchmarking |
+| 2 hotspot blocks per council (Lift, Pests) with 5–8 cases in the last 45 days | All councils | Hotspot map |
+| ~3% of cases marked as duplicates of an earlier case | All councils | Duplicate detection |
+| More water seepage complaints in Nov–Jan | All councils | Seasonal trends |
+
+Only Town Councils and feedback cases are seeded. KPIs, alerts, actions and report scores come from their own modules. Postal codes are left empty because the blocks are fictional.
 
 ---
 
