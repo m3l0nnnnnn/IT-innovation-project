@@ -1,0 +1,186 @@
+/*
+ * Collapsible desktop sidebar. Expanded keeps nav labels; collapsed leaves
+ * navigable icons with native tooltips and accessible names.
+ */
+.sidebar{
+  transition:width .22s ease,padding .22s ease;
+  overflow-x:hidden;
+}
+.sidebar-header{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  min-width:0;
+  margin:0 0 27px;
+}
+.sidebar-header .brand{
+  flex:1;
+  min-width:0;
+  margin:0;
+  gap:10px;
+}
+.sidebar-header .brand-logo{
+  width:43px;
+  height:43px;
+  flex:none;
+}
+.sidebar-header .brand-text{
+  min-width:0;
+  overflow:hidden;
+}
+.sidebar-header .brand-text strong{
+  font-size:calc(21px * var(--estara-font-scale, 1));
+}
+.sidebar-header .brand-text small{
+  white-space:nowrap;
+  font-size:calc(7px * var(--estara-font-scale, 1));
+}
+.sidebar-toggle{
+  display:grid;
+  place-items:center;
+  width:33px;
+  height:33px;
+  flex:none;
+  color:#b2d3df;
+  background:transparent;
+  border:1px solid transparent;
+  border-radius:9px;
+  cursor:pointer;
+  transition:background .15s,border-color .15s;
+}
+.sidebar-toggle:hover{
+  color:#f2fffe;
+  background:#1c4559;
+  border-color:#345b6c;
+}
+.sidebar-toggle:focus-visible{
+  outline:2px solid #5ee0d1;
+  outline-offset:2px;
+}
+.sidebar .nav-item svg{
+  flex:none;
+}
+.sidebar.sidebar-collapsed{
+  width:76px;
+  padding:22px 9px;
+}
+.sidebar.sidebar-collapsed .sidebar-header{
+  flex-direction:column;
+  align-items:center;
+  gap:10px;
+  margin-bottom:20px;
+}
+.sidebar.sidebar-collapsed .sidebar-header .brand{
+  margin:0;
+  flex:none;
+  justify-content:center;
+}
+.sidebar.sidebar-collapsed .sidebar-header .brand-text{
+  display:none;
+}
+.sidebar.sidebar-collapsed .sidebar-toggle{
+  width:42px;
+  height:32px;
+}
+.sidebar.sidebar-collapsed .side-label{
+  display:none;
+}
+.sidebar.sidebar-collapsed .nav{
+  gap:8px;
+}
+.sidebar.sidebar-collapsed .nav-item{
+  justify-content:center;
+  gap:0;
+  padding:12px 0;
+  min-width:0;
+}
+.sidebar.sidebar-collapsed .nav-item span{
+  display:none;
+}
+:root[data-density='compact'] .sidebar.sidebar-collapsed .nav-item{
+  padding:8px 0;
+}
+/* Existing tablet navigation is icon-only; the manual toggle is desktop-only. */
+@media(max-width:850px){
+  .sidebar-header{
+    flex-direction:column;
+    justify-content:center;
+    margin:0 0 20px;
+  }
+  .sidebar-header .brand{
+    flex:none;
+    justify-content:center;
+  }
+  .sidebar-toggle{
+    display:none;
+  }
+  .sidebar.sidebar-collapsed{
+    width:76px;
+    padding:22px 9px;
+  }
+}
+@media(max-width:600px){
+  /* Keep the existing horizontal, swipeable navigation on mobile. */
+  .sidebar-header{
+    display:none;
+  }
+  .sidebar.sidebar-collapsed{
+    position:static;
+    height:auto;
+    width:100%;
+    padding:10px;
+  }
+  .sidebar.sidebar-collapsed .nav{
+    display:flex;
+    overflow-x:auto;
+    gap:4px;
+  }
+  .sidebar.sidebar-collapsed .nav-item{
+    flex:none;
+    padding:11px;
+  }
+}
+@media(prefers-reduced-motion:reduce){
+  .sidebar,.sidebar-toggle{
+    transition:none;
+  }
+}
+:root[data-reduce-motion='true'] .sidebar{
+  transition:none!important;
+}
+
+
+/* Keep the account pinned to the bottom of the vertical sidebar. */
+.sidebar{
+  overflow:visible; /* Do not clip the account popover outside collapsed width. */
+}
+.sidebar-profile-area{
+  margin-top:auto;
+  padding-top:13px;
+  border-top:1px solid #2a4b61;
+  min-width:0;
+}
+.sidebar.sidebar-collapsed .sidebar-profile-area{
+  display:flex;
+  justify-content:center;
+  padding-top:10px;
+}
+.sidebar.sidebar-collapsed .sidebar-profile-area .profile-menu-root{
+  width:100%;
+}
+/* Preserve visible focus outlines and the popover on desktop. */
+@media(max-width:600px){
+  .sidebar-profile-area{
+    margin-top:5px;
+    padding:6px 0 0;
+    display:flex;
+    justify-content:flex-end;
+  }
+  .sidebar.sidebar-collapsed .sidebar-profile-area{
+    justify-content:flex-end;
+    padding-top:6px;
+  }
+  .sidebar-profile-area .profile-menu-root{
+    width:auto;
+  }
+}

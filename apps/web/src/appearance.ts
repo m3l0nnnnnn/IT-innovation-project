@@ -1,5 +1,23 @@
 export type ColorMode = 'light' | 'dark' | 'system';
-export type Density = 'comfortable' | 'compact';
+export type FontSizeLevel = 0 | 1 | 2 | 3;
+const FONT_SCALES: readonly number[] = [0.9, 1, 1.15, 1.3];
+
+export function getSavedFontSize(): FontSizeLevel {
+  try {
+    const saved = JSON.parse(localStorage.getItem(SETTINGS_KEY) ?? '{}') as {
+      preferences?: { fontSize?: unknown };
+    };
+    const size = saved?.preferences?.fontSize;
+    return size === 0 || size === 2 || size === 3 ? size : 1;
+  } catch {
+    return 1;
+  }
+}
+
+export function applyFontSize(level: FontSizeLevel): void {
+  document.documentElement.dataset.fontSize = String(level);
+  document.documentElement.style.setProperty('--estara-font-scale', String(FONT_SCALES[level]));
+}
 
 export const SETTINGS_KEY = 'estara.demo.account-settings.v1';
 
@@ -24,24 +42,12 @@ export function applyColorMode(mode: ColorMode): void {
   themeMeta?.setAttribute('content', dark ? '#0d1928' : '#ffffff');
 }
 
-export function applyDisplayPreferences(density: Density, reduceMotion: boolean): void {
-  document.documentElement.dataset.density = density;
-  document.documentElement.dataset.reduceMotion = String(reduceMotion);
-}
-
 export function initializeAppearance(): void {
+  // Ignore removed density/motion settings from older local browser preferences.
+  delete document.documentElement.dataset.density;
+  delete document.documentElement.dataset.reduceMotion;
   applyColorMode(getSavedColorMode());
-  try {
-    const saved = JSON.parse(localStorage.getItem(SETTINGS_KEY) ?? '{}') as {
-      preferences?: { density?: unknown; reduceMotion?: unknown };
-    };
-    applyDisplayPreferences(
-      saved?.preferences?.density === 'compact' ? 'compact' : 'comfortable',
-      saved?.preferences?.reduceMotion === true
-    );
-  } catch {
-    applyDisplayPreferences('comfortable', false);
-  }
+  applyFontSize(getSavedFontSize());
   // System mode follows Windows/macOS/browser theme changes without a page reload.
   window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
     if (getSavedColorMode() === 'system') applyColorMode('system');

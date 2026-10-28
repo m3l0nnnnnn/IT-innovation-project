@@ -2,8 +2,9 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { Link, NavLink, Route, Routes } from 'react-router-dom';
 import axios from 'axios';
 import { AreaChart, Area, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import { LayoutDashboard, MessageSquare, BarChart3, BellRing, ClipboardList, FileText, Bot, Search, Download, TrendingDown, TrendingUp, ShieldCheck, ArrowRight, AlertTriangle, Building2, Settings, CircleUserRound } from 'lucide-react';
+import { LayoutDashboard, MessageSquare, BarChart3, BellRing, ClipboardList, FileText, Bot, Search, Download, TrendingDown, TrendingUp, ShieldCheck, ArrowRight, AlertTriangle, Building2, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import SettingsPage from './Settings';
+import ProfileMenu from './ProfileMenu';
 
 type Case = { id:string; council:string; location:string; category:string; received:string; status:string; officer:string };
 type Kpi = { id:string; name:string; unit:string; value:number; target:number; trend:number; points:number[] };
@@ -43,19 +44,66 @@ const nav = [
   {to:'/alerts',label:'Early Warnings',icon:BellRing,end:false},
   {to:'/actions',label:'Corrective Actions',icon:ClipboardList,end:false},
   {to:'/reports',label:'Reports & Scores',icon:FileText,end:false},
-  {to:'/assistant',label:'AI Assistant',icon:Bot,end:false},
-  {to:'/settings',label:'Account Settings',icon:Settings,end:false}
+  {to:'/assistant',label:'AI Assistant',icon:Bot,end:false}
 ];
+const SIDEBAR_PREFERENCE_KEY = 'estara.ui.sidebar.collapsed.v1';
+
 function Sidebar() {
-  return <aside className="sidebar">
-    <Link className="brand" to="/"><img className="brand-logo" src="/estara-logo-transparent.webp" alt="Estara logo"/><div><strong>Estara</strong><small>PERFORMANCE INTELLIGENCE</small></div></Link>
+  const [collapsed, setCollapsed] = useState<boolean>(() => {
+    try {
+      return window.localStorage.getItem(SIDEBAR_PREFERENCE_KEY) === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  function toggleSidebar() {
+    const next = !collapsed;
+    setCollapsed(next);
+    try {
+      window.localStorage.setItem(SIDEBAR_PREFERENCE_KEY, String(next));
+    } catch {
+      // The UI still works when browser storage is disabled.
+    }
+  }
+
+  return <aside className={'sidebar' + (collapsed ? ' sidebar-collapsed' : '')}>
+    <div className="sidebar-header">
+      <Link className="brand" to="/" title="Estara home" aria-label="Estara home">
+        <img className="brand-logo" src="/estara-logo-transparent.webp" alt="Estara logo"/>
+        <div className="brand-text"><strong>Estara</strong><small>PERFORMANCE INTELLIGENCE</small></div>
+      </Link>
+      <button
+        type="button"
+        className="sidebar-toggle"
+        onClick={toggleSidebar}
+        aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+        aria-expanded={!collapsed}
+        aria-controls="estara-primary-navigation"
+        title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+      >
+        {collapsed ? <PanelLeftOpen size={19}/> : <PanelLeftClose size={19}/>}
+      </button>
+    </div>
     <p className="side-label">WORKSPACE</p>
-    <nav className="nav">{nav.map(item => <NavLink key={item.to} to={item.to} end={item.end} className={({isActive}) => 'nav-item'+(isActive?' active':'')}><item.icon size={18}/><span>{item.label}</span></NavLink>)}</nav>
-    <div className="side-bottom"><div className="side-info"><ShieldCheck size={17}/><div><strong>Demo environment</strong><p>Fictional sample records only</p></div></div><small>ESTARA · INITIAL SKELETON</small></div>
+    <nav id="estara-primary-navigation" className="nav" aria-label="Main navigation">
+      {nav.map(item => <NavLink
+        key={item.to}
+        to={item.to}
+        end={item.end}
+        title={item.label}
+        aria-label={item.label}
+        className={({isActive}) => 'nav-item' + (isActive ? ' active' : '')}
+      >
+        <item.icon size={18}/>
+        <span>{item.label}</span>
+      </NavLink>)}
+    </nav>
+    <div className="sidebar-profile-area"><ProfileMenu/></div>
   </aside>;
 }
 function Layout() {
-  return <div className="app-layout"><Sidebar/><main className="main-area"><div className="topbar"><div>Estara <span>/</span> Management workspace</div><div className="topbar-actions"><span className="demo-pill"><i/> DEMO DATA</span><Link to="/settings" className="topbar-account" aria-label="Open account settings"><CircleUserRound size={18}/><span>Account</span></Link></div></div><div className="content"><Routes>
+  return <div className="app-layout"><Sidebar/><main className="main-area"><div className="content"><Routes>
     <Route index element={<Dashboard/>}/>
     <Route path="cases" element={<Cases/>}/>
     <Route path="analytics" element={<Analytics/>}/>

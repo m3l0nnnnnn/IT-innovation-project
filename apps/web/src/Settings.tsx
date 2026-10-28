@@ -1,12 +1,14 @@
-import { useState, type FormEvent, type ReactNode } from 'react';
+import { useRef, useState, type CSSProperties, type ChangeEvent, type FormEvent, type ReactNode } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   BellRing, Check, CheckCircle2, CircleUserRound, KeyRound, LockKeyhole,
-  Mail, Monitor, Moon, RotateCcw, ShieldCheck, Smartphone, Sun, UserRound
+  Mail, Monitor, Moon, RotateCcw, ShieldCheck, Smartphone, Sun, UserRound, Camera, Upload, Trash2
 } from 'lucide-react';
 import {
-  applyColorMode, applyDisplayPreferences, SETTINGS_KEY,
-  type ColorMode, type Density
+  applyColorMode, applyFontSize, SETTINGS_KEY,
+  type ColorMode, type FontSizeLevel
 } from './appearance';
+import { getSavedProfilePhoto, makeProfilePhoto, PROFILE_PHOTO_KEY } from './profile-photo';
 import './account-settings.css';
 
 type Section = 'profile' | 'appearance' | 'notifications' | 'security';
@@ -14,9 +16,8 @@ type Preferences = {
   warningUpdates: boolean;
   actionReminders: boolean;
   weeklyDigest: boolean;
-  density: Density;
-  reduceMotion: boolean;
   colorMode: ColorMode;
+  fontSize: FontSizeLevel;
 };
 type DemoAccount = {
   profile: { displayName: string; jobTitle: string };
@@ -29,9 +30,8 @@ const INITIAL: DemoAccount = {
     warningUpdates: true,
     actionReminders: true,
     weeklyDigest: false,
-    density: 'comfortable',
-    reduceMotion: false,
-    colorMode: 'system'
+    colorMode: 'system',
+    fontSize: 1
   }
 };
 const sections: { id: Section; title: string; description: string; icon: typeof UserRound }[] = [
@@ -55,9 +55,8 @@ function readAccount(): DemoAccount {
         warningUpdates: typeof prefs?.warningUpdates === 'boolean' ? prefs.warningUpdates : INITIAL.preferences.warningUpdates,
         actionReminders: typeof prefs?.actionReminders === 'boolean' ? prefs.actionReminders : INITIAL.preferences.actionReminders,
         weeklyDigest: typeof prefs?.weeklyDigest === 'boolean' ? prefs.weeklyDigest : INITIAL.preferences.weeklyDigest,
-        density: prefs?.density === 'compact' ? 'compact' : 'comfortable',
-        reduceMotion: prefs?.reduceMotion === true,
-        colorMode: prefs?.colorMode === 'light' || prefs?.colorMode === 'dark' ? prefs.colorMode : 'system'
+        colorMode: prefs?.colorMode === 'light' || prefs?.colorMode === 'dark' ? prefs.colorMode : 'system',
+        fontSize: prefs?.fontSize === 0 || prefs?.fontSize === 2 || prefs?.fontSize === 3 ? prefs.fontSize : 1
       }
     };
   } catch {
@@ -86,19 +85,59 @@ function SecurityRow({ icon, title, detail }: { icon: ReactNode; title: string; 
 }
 
 export default function SettingsPage() {
-  const [section, setSection] = useState<Section>('profile');
+  const [sectionParams, setSectionParams] = useSearchParams();
+  const requestedSection = sectionParams.get('section');
+  const section: Section =
+    requestedSection === 'appearance' || requestedSection === 'notifications' || requestedSection === 'security'
+      ? requestedSection
+      : 'profile';
   const [account, setAccount] = useState<DemoAccount>(readAccount);
   const [displayName, setDisplayName] = useState(account.profile.displayName);
   const [jobTitle, setJobTitle] = useState(account.profile.jobTitle);
+  const [savedPhoto, setSavedPhoto] = useState<string | null>(getSavedProfilePhoto);
+  const [profilePhoto, setProfilePhoto] = useState<string | null>(savedPhoto);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
   const [feedback, setFeedback] = useState('');
   const [error, setError] = useState('');
+
+  async function uploadPhoto(event: ChangeEvent<HTMLInputElement>): Promise<void> {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    setUploadingPhoto(true);
+    setError('');
+    setFeedback('');
+    try {
+      const resized = await makeProfilePhoto(file);
+      // Preview the processed image. Only Save changes persists it.
+      setProfilePhoto(resized);
+    } catch (problem) {
+      setError(problem instanceof Error ? problem.message : 'Could not save the selected photo.');
+    } finally {
+      if (fileRef.current) fileRef.current.value = '';
+      setUploadingPhoto(false);
+    }
+  }
+
+  function removePhoto(): void {
+    setProfilePhoto(null);
+    setError('');
+    setFeedback('');
+  }
+
+  function discardPhotoChange(): void {
+    setProfilePhoto(savedPhoto);
+    setError('');
+    setFeedback('');
+  }
 
   function save(next: DemoAccount, message: string): void {
     try {
       localStorage.setItem(SETTINGS_KEY, JSON.stringify(next));
       setAccount(next);
+      window.dispatchEvent(new Event('estara-account-updated'));
       applyColorMode(next.preferences.colorMode);
-      applyDisplayPreferences(next.preferences.density, next.preferences.reduceMotion);
+      applyFontSize(next.preferences.fontSize);
       setError('');
       setFeedback(message);
     } catch {
@@ -122,20 +161,63 @@ export default function SettingsPage() {
       setFeedback('');
       return;
     }
-    save({
+    if (uploadingPhoto) {
+      setError('Finish processing the photo before saving.');
+      return;
+    }
+
+    const next: DemoAccount = {
       ...account,
       profile: { displayName: name, jobTitle: jobTitle.trim() }
-    }, 'Demo profile saved to this browser.');
+    };
+    try {
+      // Keep the sidebar unchanged until both the profile and photo are saved.
+      // Restore the previous photo if the profile write fails.
+      const previousPhoto = localStorage.getItem(PROFILE_PHOTO_KEY);
+      if (profilePhoto) {
+        localStorage.setItem(PROFILE_PHOTO_KEY, profilePhoto);
+      } else {
+        localStorage.removeItem(PROFILE_PHOTO_KEY);
+      }
+
+      try {
+        localStorage.setItem(SETTINGS_KEY, JSON.stringify(next));
+      } catch (writeError) {
+        try {
+          if (previousPhoto !== null) {
+            localStorage.setItem(PROFILE_PHOTO_KEY, previousPhoto);
+          } else {
+            localStorage.removeItem(PROFILE_PHOTO_KEY);
+          }
+        } catch {
+          // Storage failure; report the error and leave draft values available.
+        }
+        throw writeError;
+      }
+
+      setAccount(next);
+      setSavedPhoto(profilePhoto);
+      window.dispatchEvent(new Event('estara-account-updated'));
+      setError('');
+      setFeedback('Profile changes saved to this browser.');
+    } catch {
+      setError('Unable to save your profile. Enable browser storage and try again.');
+      setFeedback('');
+    }
   }
 
   function reset(): void {
     try {
       localStorage.removeItem(SETTINGS_KEY);
+      localStorage.removeItem(PROFILE_PHOTO_KEY);
+      setProfilePhoto(null);
+      setSavedPhoto(null);
       setAccount(INITIAL);
+      window.dispatchEvent(new Event('estara-account-updated'));
       setDisplayName(INITIAL.profile.displayName);
       setJobTitle(INITIAL.profile.jobTitle);
       applyColorMode('system');
-      applyDisplayPreferences('comfortable', false);
+      applyFontSize(1);
       setError('');
       setFeedback('Browser-only settings restored to defaults.');
     } catch {
@@ -144,6 +226,7 @@ export default function SettingsPage() {
     }
   }
 
+  const photoHasUnsavedChanges = profilePhoto !== savedPhoto;
   const initials = account.profile.displayName.trim().split(/\s+/).slice(0, 2).map(x => x[0]?.toUpperCase() ?? '').join('') || 'DM';
   return <div className="account-page">
     <div className="page-header">
@@ -152,9 +235,9 @@ export default function SettingsPage() {
     </div>
     <div className="account-layout">
       <aside className="account-nav-panel">
-        <div className="account-identity"><div className="account-avatar">{initials}</div><div><strong>{account.profile.displayName}</strong><small>EMS Manager · Demo</small></div></div>
+        <div className="account-identity"><div className="account-avatar">{savedPhoto ? <img className="account-avatar-image" src={savedPhoto} alt=""/> : initials}</div><div><strong>{account.profile.displayName}</strong><small>EMS Manager · Demo</small></div></div>
         <nav className="account-sections" aria-label="Account settings sections">
-          {sections.map(item => <button key={item.id} type="button" className={'account-section-link' + (item.id === section ? ' selected' : '')} aria-pressed={item.id === section} onClick={() => { setSection(item.id); setError(''); setFeedback(''); }}><item.icon size={18}/><span><strong>{item.title}</strong><small>{item.description}</small></span></button>)}
+          {sections.map(item => <button key={item.id} type="button" className={'account-section-link' + (item.id === section ? ' selected' : '')} aria-pressed={item.id === section} onClick={() => { setSectionParams({ section: item.id }); setError(''); setFeedback(''); }}><item.icon size={18}/><span><strong>{item.title}</strong><small>{item.description}</small></span></button>)}
         </nav>
         <div className="account-nav-foot"><ShieldCheck size={16}/><span>Demo settings are saved only in this browser, not to an EMS account.</span></div>
       </aside>
@@ -164,7 +247,34 @@ export default function SettingsPage() {
 
         {section === 'profile' && <section className="card account-panel" aria-label="My profile">
           <SectionHeading icon={<CircleUserRound size={20}/>} title="My profile" detail="Details displayed in your Estara demo workspace."/>
-          <div className="account-profile-overview"><div className="account-avatar large">{initials}</div><div><strong>{account.profile.displayName}</strong><small>Illustrative account · Not signed in</small></div><span className="account-neutral-pill">DEMO</span></div>
+          <div className="account-profile-overview"><div className="account-avatar large">{profilePhoto ? <img className="account-avatar-image" src={profilePhoto} alt=""/> : initials}</div><div><strong>{account.profile.displayName}</strong><small>Illustrative account · Not signed in</small></div><span className="account-neutral-pill">DEMO</span></div>
+          <div className="account-photo-editor">
+            <div className="account-photo-icon"><Camera size={19}/></div>
+            <div className="account-photo-copy">
+              <strong>Profile picture</strong>
+              <small>JPG, PNG or WebP · Maximum 5 MB · Automatically cropped to a square</small>
+              <small>Preview first, then click Save changes. Photos stay in this browser.</small>
+            </div>
+            <div className="account-photo-controls">
+              <input
+                ref={fileRef}
+                id="estara-profile-photo-input"
+                className="account-photo-input"
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                aria-label="Choose profile picture"
+                disabled={uploadingPhoto}
+                onChange={event => { void uploadPhoto(event); }}
+              />
+              <label className={'account-photo-upload' + (uploadingPhoto ? ' busy' : '')} htmlFor="estara-profile-photo-input">
+                <Upload size={15}/>{uploadingPhoto ? 'Processing…' : profilePhoto ? 'Change photo' : 'Upload photo'}
+              </label>
+              {photoHasUnsavedChanges
+                ? <button className="account-photo-remove" type="button" disabled={uploadingPhoto} onClick={discardPhotoChange}>Discard</button>
+                : profilePhoto && <button className="account-photo-remove" type="button" disabled={uploadingPhoto} onClick={removePhoto}><Trash2 size={15}/> Remove</button>}
+            </div>
+            {photoHasUnsavedChanges && <p className="account-photo-pending" role="status">Photo change not saved yet. Click <strong>Save changes</strong> below to apply it.</p>}
+          </div>
           <form onSubmit={saveProfile}>
             <div className="account-fields">
               <label><span>Display name</span><input value={displayName} required minLength={2} maxLength={64} autoComplete="off" onChange={e=>setDisplayName(e.target.value)}/></label>
@@ -172,7 +282,7 @@ export default function SettingsPage() {
               <label><span>Email address</span><input readOnly value="Not configured for demo" aria-label="Email address not configured"/></label>
               <label><span>Access role</span><input readOnly value="EMS Manager (example)"/></label>
             </div>
-            <div className="account-actions"><p>Only display name and job title can be saved in this prototype.</p><button type="submit" className="primary-button">Save changes</button></div>
+            <div className="account-actions"><p>Profile details and photo are saved together when you click Save changes.</p><button type="submit" className="primary-button" disabled={uploadingPhoto}>Save changes</button></div>
           </form>
         </section>}
 
@@ -189,11 +299,42 @@ export default function SettingsPage() {
               <div className="account-theme-caption"><mode.icon size={17}/><strong>{mode.title}</strong>{account.preferences.colorMode===mode.id&&<Check className="account-theme-check" size={15}/>}</div><small>{mode.detail}</small>
             </button>)}
           </div>
-          <div className="account-preference-divider"/>
-          <div className="account-group-heading"><h3>Display preferences</h3><p>Adjust spacing and motion throughout Estara.</p></div>
-          <div className="account-choice-row"><div><strong>Layout density</strong><small>Choose the spacing between interface elements.</small></div><select aria-label="Layout density" value={account.preferences.density} onChange={e => updatePreference('density',e.target.value as Density)}><option value="comfortable">Comfortable</option><option value="compact">Compact</option></select></div>
-          <Toggle title="Reduce motion" detail="Minimise transitions and animations." checked={account.preferences.reduceMotion} onChange={v=>updatePreference('reduceMotion',v)}/>
           <p className="account-helper">Your choice is applied immediately and remembered in this browser. “Follow system” tracks Windows/macOS theme changes automatically.</p>
+          <div className="account-text-size-section">
+            <div className="account-text-size-heading">
+              <div>
+                <h3>Text size</h3>
+                <p>Make text across Estara easier to read.</p>
+              </div>
+              <span className="account-text-size-current">{['Small', 'Standard', 'Large', 'Extra large'][account.preferences.fontSize]}</span>
+            </div>
+            <div className="account-text-size-slider">
+              <span className="account-text-size-a small" aria-hidden="true">A</span>
+              <div className="account-text-size-track">
+                <input
+                  type="range"
+                  min={0}
+                  max={3}
+                  step={1}
+                  value={account.preferences.fontSize}
+                  onChange={event => updatePreference('fontSize', Number(event.target.value) as FontSizeLevel)}
+                  aria-label="Text size"
+                  aria-valuetext={['Small', 'Standard', 'Large', 'Extra large'][account.preferences.fontSize]}
+                  style={{ '--text-size-progress': String(account.preferences.fontSize / 3 * 100) + '%' } as CSSProperties}
+                />
+                <div className="account-text-size-ticks" aria-hidden="true">
+                  <span>Small</span><span>Standard</span><span>Large</span><span>Extra large</span>
+                </div>
+              </div>
+              <span className="account-text-size-a large" aria-hidden="true">A</span>
+            </div>
+            <div className="account-text-size-preview">
+              <span>LIVE PREVIEW</span>
+              <strong>Clear information at a glance</strong>
+              <p>Review cases, spot emerging risks, and stay on top of your work.</p>
+            </div>
+            <p className="account-helper">Text size applies throughout Estara and is remembered on this device.</p>
+          </div>
         </section>}
 
         {section === 'notifications' && <section className="card account-panel" aria-label="Notification preferences">
