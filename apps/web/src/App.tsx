@@ -6,7 +6,7 @@ import { LayoutDashboard, MessageSquare, BarChart3, BellRing, ClipboardList, Fil
 import SettingsPage from './Settings';
 import ProfileMenu from './ProfileMenu';
 
-type Case = { id:string; council:string; location:string; category:string; received:string; status:string; officer:string };
+type Case = { id:string; caseRef:string; council:string; block:string; location:string|null; category:string; receivedAt:string; status:string; assignedOfficer:string|null };
 type Kpi = { id:string; name:string; unit:string; value:number; target:number; trend:number; points:number[] };
 type Alert = { id:string; council:string; title:string; severity:'Watch'|'Warning'|'Critical'; status:string; reason:string; date:string };
 type Action = { id:string; title:string; owner:string; council:string; priority:string; status:string; due:string; alertId:string };
@@ -137,9 +137,9 @@ function Stat({icon,label,value,foot,tone}:{icon:ReactNode;label:string;value:nu
 }
 function CardTitle({title,sub}:{title:string;sub:string}){return <div className="card-head"><h2>{title}</h2><p>{sub}</p></div>}
 function Cases(){
-  const {data,error}=useApi<ListResult<Case>>('cases');const [query,setQuery]=useState('');
-  const filtered=(data?.data??[]).filter(c=>[c.id,c.council,c.category,c.location,c.status].join(' ').toLowerCase().includes(query.toLowerCase()));
-  return <><Heading eyebrow="DATA MANAGEMENT · CHARLES" title="Feedback cases" description="Review case records received by Town Councils, track case status and locate recurring issues."/><State error={error} ready={!!data}/>{data && <div className="card"><div className="table-tools"><label className="search"><Search size={16}/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search cases, category or location..." aria-label="Search feedback cases"/></label><span className="count">{filtered.length} case(s)</span></div><div className="table-wrap"><table><thead><tr><th>Case ID</th><th>District</th><th>Location</th><th>Category</th><th>Received</th><th>Officer</th><th>Status</th></tr></thead><tbody>{filtered.map(c=><tr key={c.id}><td className="id">{c.id}</td><td>{c.council}</td><td>{c.location}</td><td>{c.category}</td><td>{c.received}</td><td>{c.officer}</td><td><Badge value={c.status}/></td></tr>)}</tbody></table>{!filtered.length&&<p className="empty">No matching cases.</p>}</div></div>}</>;
+  const {data,error}=useApi<ListResult<Case>>('cases?pageSize=100');const [query,setQuery]=useState('');
+  const filtered=(data?.data??[]).filter(c=>[c.caseRef,c.council,c.block,c.category,c.location,c.status].join(' ').toLowerCase().includes(query.toLowerCase()));
+  return <><Heading eyebrow="DATA MANAGEMENT · CHARLES" title="Feedback cases" description="Review case records received by Town Councils, track case status and locate recurring issues."/><State error={error} ready={!!data}/>{data && <div className="card"><div className="table-tools"><label className="search"><Search size={16}/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search cases, category or location..." aria-label="Search feedback cases"/></label><span className="count">{filtered.length} case(s)</span></div><div className="table-wrap"><table><thead><tr><th>Case ID</th><th>District</th><th>Location</th><th>Category</th><th>Received</th><th>Officer</th><th>Status</th></tr></thead><tbody>{filtered.map(c=><tr key={c.id}><td className="id">{c.caseRef}</td><td>{c.council}</td><td>Blk {c.block}{c.location ? ' · '+c.location : ''}</td><td>{c.category}</td><td>{c.receivedAt.slice(0,10)}</td><td>{c.assignedOfficer ?? '—'}</td><td><Badge value={c.status}/></td></tr>)}</tbody></table>{!filtered.length&&<p className="empty">No matching cases.</p>}</div></div>}</>;
 }
 function Analytics(){
   const {data,error}=useApi<ListResult<Kpi>>('kpis'); const [selected,setSelected]=useState('K1');
