@@ -2,7 +2,7 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { Link, NavLink, Route, Routes, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { AreaChart, Area, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import { LayoutDashboard, MessageSquare, BarChart3, BellRing, ClipboardList, FileText, Bot, Download, TrendingDown, TrendingUp, ShieldCheck, ArrowRight, AlertTriangle, Building2, PanelLeftClose, PanelLeftOpen, ChevronDown, ChevronRight, Settings as SettingsIcon } from 'lucide-react';
+import { LayoutDashboard, MessageSquare, BarChart3, BellRing, ClipboardList, FileText, Bot, Download, TrendingDown, TrendingUp, ShieldCheck, ArrowRight, AlertTriangle, Building2, PanelLeftClose, PanelLeftOpen, ChevronDown, ChevronRight } from 'lucide-react';
 import SettingsPage from './Settings';
 import ProfileMenu from './ProfileMenu';
 import GroundCases from './GroundCases';
@@ -49,8 +49,7 @@ const navGroups=[
   {label:'Management Reports',icon:FileText,items:[
     {to:'/reports',label:'Reports & Scores'},
     {to:'/assistant',label:'AI Assistant (planned)'}
-  ]},
-  {label:'Administration',icon:SettingsIcon,items:[{to:'/settings',label:'Settings & Profile'}]}
+  ]}
 ];
 const SIDEBAR_PREFERENCE_KEY = 'estara.ui.sidebar.collapsed.v1';
 
@@ -94,7 +93,7 @@ function Sidebar() {
         {collapsed?<PanelLeftOpen size={19}/>:<PanelLeftClose size={19}/>}
       </button>
     </div>
-    {!collapsed&&<p className="side-label">ADMIN WORKSPACE · PROTOTYPE</p>}
+    {!collapsed&&<p className="side-label">WORKSPACE · PROTOTYPE</p>}
     <nav id="estara-primary-navigation" className="nav" aria-label="Main navigation">
       <NavLink to="/" end title="Dashboard" aria-label="Dashboard"
         className={({isActive})=>'nav-item'+(isActive?' active':'')}>
