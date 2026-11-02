@@ -1,12 +1,21 @@
 import { useEffect, useState, type ReactNode } from 'react';
-import { Link, NavLink, Route, Routes } from 'react-router-dom';
+import { Link, NavLink, Route, Routes, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { AreaChart, Area, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import { LayoutDashboard, MessageSquare, BarChart3, BellRing, ClipboardList, FileText, Bot, Search, Download, TrendingDown, TrendingUp, ShieldCheck, ArrowRight, AlertTriangle, Building2, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { LayoutDashboard, MessageSquare, BarChart3, BellRing, ClipboardList, FileText, Bot, Download, TrendingDown, TrendingUp, ShieldCheck, ArrowRight, AlertTriangle, Building2, PanelLeftClose, PanelLeftOpen, ChevronDown, ChevronRight } from 'lucide-react';
 import SettingsPage from './Settings';
 import ProfileMenu from './ProfileMenu';
+import GroundCases from './GroundCases';
+import GroundInsightsPage from './GroundInsights';
+import EstateMonitoring from './EstateMonitoring';
+import StudioDashboard from './StudioDashboard';
+import StudioAnalytics from './StudioAnalytics';
+import StudioRisk from './StudioRisk';
+import StudioReports from './StudioReports';
+import StudioAssistant from './StudioAssistant';
+import { RoleBanner, isPreviewVisible, useDemoRole } from './role-preview';
+import DeveloperTools from './DeveloperTools';
 
-type Case = { id:string; caseRef:string; council:string; block:string; location:string|null; category:string; receivedAt:string; status:string; assignedOfficer:string|null };
 type Kpi = { id:string; name:string; unit:string; value:number; target:number; trend:number; points:number[] };
 type Alert = { id:string; council:string; title:string; severity:'Watch'|'Warning'|'Critical'; status:string; reason:string; date:string };
 type Action = { id:string; title:string; owner:string; council:string; priority:string; status:string; due:string; alertId:string };
@@ -37,83 +46,129 @@ function Badge({value}:{value:string}) {
 function Heading({eyebrow,title,description,action}:{eyebrow:string;title:string;description:string;action?:ReactNode}) {
   return <header className="page-header"><div><p className="eyebrow">{eyebrow}</p><h1>{title}</h1><p className="subtext">{description}</p></div>{action}</header>;
 }
-const nav = [
-  {to:'/',label:'Overview',icon:LayoutDashboard,end:true},
-  {to:'/cases',label:'Feedback Cases',icon:MessageSquare,end:false},
-  {to:'/analytics',label:'KPI Analytics',icon:BarChart3,end:false},
-  {to:'/alerts',label:'Early Warnings',icon:BellRing,end:false},
-  {to:'/actions',label:'Corrective Actions',icon:ClipboardList,end:false},
-  {to:'/reports',label:'Reports & Scores',icon:FileText,end:false},
-  {to:'/assistant',label:'AI Assistant',icon:Bot,end:false}
+// One admin workspace, grouped by operational workflow. Roles/permissions will be
+// enforced by the API in a later phase, not by hiding these links.
+const navGroups=[
+  {label:'Ground Operations',icon:Building2,items:[
+    {to:'/cases',label:'Feedback Cases'},
+    {to:'/operations/insights',label:'Operational Insights'},
+    {to:'/operations/inspections',label:'Estate Inspections'},
+    {to:'/operations/map',label:'Block Map'}
+  ]},
+  {label:'Performance Analytics',icon:BarChart3,items:[
+    {to:'/analytics',label:'KPI Analytics & Scenarios'}
+  ]},
+  {label:'Risk & Actions',icon:BellRing,items:[
+    {to:'/alerts',label:'Early Warnings'},
+    {to:'/actions',label:'Corrective Actions'},
+    {to:'/risk/rules',label:'Warning Rules'},
+    {to:'/risk/replay',label:'Historical Replay'}
+  ]},
+  {label:'Management Reports',icon:FileText,items:[
+    {to:'/reports',label:'Reports & Digest'},
+    {to:'/assistant',label:'Insights Assistant (demo)'}
+  ]}
 ];
 const SIDEBAR_PREFERENCE_KEY = 'estara.ui.sidebar.collapsed.v1';
 
 function Sidebar() {
-  const [collapsed, setCollapsed] = useState<boolean>(() => {
-    try {
-      return window.localStorage.getItem(SIDEBAR_PREFERENCE_KEY) === 'true';
-    } catch {
-      return false;
-    }
+  const location=useLocation();
+  const previewRole=useDemoRole();
+  const visibleGroups=navGroups.map(group=>({
+    ...group,items:group.items.filter(item=>isPreviewVisible(previewRole,item.to))
+  })).filter(group=>group.items.length>0);
+  const [collapsed,setCollapsed]=useState<boolean>(()=>{
+    try{return window.localStorage.getItem(SIDEBAR_PREFERENCE_KEY)==='true';}
+    catch{return false;}
   });
+  // The current route determines the default expanded group. Manual expansion
+  // wins until the user navigates to a different route.
+  const [manualGroup,setManualGroup]=useState<string|null>(null);
+  useEffect(()=>setManualGroup(null),[location.pathname]);
+  const routeGroup=visibleGroups.find(g=>g.items.some(item=>item.to===location.pathname))?.label;
+  const openGroup=manualGroup??routeGroup??'Ground Operations';
 
-  function toggleSidebar() {
-    const next = !collapsed;
+  function toggleSidebar(){
+    const next=!collapsed;
     setCollapsed(next);
-    try {
-      window.localStorage.setItem(SIDEBAR_PREFERENCE_KEY, String(next));
-    } catch {
-      // The UI still works when browser storage is disabled.
+    try{window.localStorage.setItem(SIDEBAR_PREFERENCE_KEY,String(next));}catch{}
+  }
+  function toggleGroup(label:string){
+    if(collapsed){
+      setCollapsed(false);
+      try{window.localStorage.setItem(SIDEBAR_PREFERENCE_KEY,'false');}catch{}
+      setManualGroup(label);
+    } else {
+      setManualGroup(openGroup===label?'':label);
     }
   }
-
-  return <aside className={'sidebar' + (collapsed ? ' sidebar-collapsed' : '')}>
+  return <aside className={'sidebar'+(collapsed?' sidebar-collapsed':'')}>
     <div className="sidebar-header">
       <Link className="brand" to="/" title="Estara home" aria-label="Estara home">
         <img className="brand-logo" src="/estara-logo-transparent.webp" alt="Estara logo"/>
         <div className="brand-text"><strong>Estara</strong><small>PERFORMANCE INTELLIGENCE</small></div>
       </Link>
-      <button
-        type="button"
-        className="sidebar-toggle"
-        onClick={toggleSidebar}
-        aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-        aria-expanded={!collapsed}
-        aria-controls="estara-primary-navigation"
-        title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-      >
-        {collapsed ? <PanelLeftOpen size={19}/> : <PanelLeftClose size={19}/>}
+      <button type="button" className="sidebar-toggle" onClick={toggleSidebar}
+        aria-label={collapsed?'Expand sidebar':'Collapse sidebar'}
+        aria-expanded={!collapsed} aria-controls="estara-primary-navigation"
+        title={collapsed?'Expand sidebar':'Collapse sidebar'}>
+        {collapsed?<PanelLeftOpen size={19}/>:<PanelLeftClose size={19}/>}
       </button>
     </div>
-    <p className="side-label">WORKSPACE</p>
+    {!collapsed&&<p className="side-label">WORKSPACE · PROTOTYPE</p>}
     <nav id="estara-primary-navigation" className="nav" aria-label="Main navigation">
-      {nav.map(item => <NavLink
-        key={item.to}
-        to={item.to}
-        end={item.end}
-        title={item.label}
-        aria-label={item.label}
-        className={({isActive}) => 'nav-item' + (isActive ? ' active' : '')}
-      >
-        <item.icon size={18}/>
-        <span>{item.label}</span>
-      </NavLink>)}
+      <NavLink to="/" end title="Dashboard" aria-label="Dashboard"
+        className={({isActive})=>'nav-item'+(isActive?' active':'')}>
+        <LayoutDashboard size={18}/><span>Dashboard</span>
+      </NavLink>
+      {visibleGroups.map((group,index)=><div className="nav-group" key={group.label}>
+        <button type="button" className={'nav-item nav-group-button'+(routeGroup===group.label?' current':'')}
+          onClick={()=>toggleGroup(group.label)} title={group.label} aria-label={group.label}
+          aria-expanded={!collapsed&&openGroup===group.label} aria-controls={'nav-group-'+index}>
+          <group.icon size={18}/>
+          <span>{group.label}</span>
+          {!collapsed&&(openGroup===group.label?<ChevronDown size={15} className="nav-group-chevron"/>:<ChevronRight size={15} className="nav-group-chevron"/>)}
+        </button>
+        {!collapsed&&openGroup===group.label&&<div id={'nav-group-'+index} className="nav-submenu">
+          {group.items.map(item=><NavLink key={item.to} to={item.to} title={item.label}
+            className={({isActive})=>'nav-subitem'+(isActive?' active':'')}>
+            {item.label}
+          </NavLink>)}
+        </div>}
+      </div>)}
     </nav>
     <div className="sidebar-profile-area"><ProfileMenu/></div>
   </aside>;
 }
 function Layout() {
-  return <div className="app-layout"><Sidebar/><main className="main-area"><div className="content"><Routes>
-    <Route index element={<Dashboard/>}/>
-    <Route path="cases" element={<Cases/>}/>
-    <Route path="analytics" element={<Analytics/>}/>
-    <Route path="alerts" element={<Alerts/>}/>
-    <Route path="actions" element={<Actions/>}/>
-    <Route path="reports" element={<Reports/>}/>
-    <Route path="assistant" element={<Assistant/>}/>
-    <Route path="settings" element={<SettingsPage/>}/>
-    <Route path="*" element={<div className="card">Page not found. <Link to="/">Return to dashboard</Link>.</div>}/>
-  </Routes><footer>Estara prototype · All records and thresholds shown are illustrative, not EMS production data.</footer></div></main></div>;
+  return <div className="app-layout"><Sidebar/><main className="main-area"><div className="content">
+    <RoleBanner/>
+    <Routes>
+      <Route index element={<StudioDashboard/>}/>
+      <Route path="cases" element={<Cases/>}/>
+      <Route path="operations/insights" element={<GroundInsightsPage/>}/>
+      <Route path="operations/inspections" element={<EstateMonitoring initialView="inspections"/>}/>
+      <Route path="operations/map" element={<EstateMonitoring initialView="map"/>}/>
+      <Route path="analytics" element={<StudioAnalytics/>}/>
+      <Route path="alerts" element={<StudioRisk view="alerts"/>}/>
+      <Route path="actions" element={<StudioRisk view="actions"/>}/>
+      <Route path="risk/rules" element={<StudioRisk view="rules"/>}/>
+      <Route path="risk/replay" element={<StudioRisk view="replay"/>}/>
+      <Route path="reports" element={<StudioReports/>}/>
+      <Route path="assistant" element={<StudioAssistant/>}/>
+      <Route path="settings" element={<SettingsPage/>}/>
+      <Route path="dev-tools" element={<DeveloperTools/>}/>
+      {/* Legacy starter pages are retained for comparison; not included in prototype navigation. */}
+      <Route path="legacy/dashboard" element={<Dashboard/>}/>
+      <Route path="legacy/analytics" element={<Analytics/>}/>
+      <Route path="legacy/alerts" element={<Alerts/>}/>
+      <Route path="legacy/actions" element={<Actions/>}/>
+      <Route path="legacy/reports" element={<Reports/>}/>
+      <Route path="legacy/assistant" element={<Assistant/>}/>
+      <Route path="*" element={<div className="card">Page not found. <Link to="/">Return to dashboard</Link>.</div>}/>
+    </Routes>
+    <footer>Estara prototype · All records, risk scores, rules and recommendations are illustrative.</footer>
+  </div></main></div>;
 }
 function Dashboard(){
   const {data,error}=useApi<Overview>('overview');
@@ -136,11 +191,7 @@ function Stat({icon,label,value,foot,tone}:{icon:ReactNode;label:string;value:nu
   return <article className="stat card"><span className={'stat-icon '+tone}>{icon}</span><p>{label}</p><strong>{value}</strong><small>{foot}</small></article>;
 }
 function CardTitle({title,sub}:{title:string;sub:string}){return <div className="card-head"><h2>{title}</h2><p>{sub}</p></div>}
-function Cases(){
-  const {data,error}=useApi<ListResult<Case>>('cases?pageSize=100');const [query,setQuery]=useState('');
-  const filtered=(data?.data??[]).filter(c=>[c.caseRef,c.council,c.block,c.category,c.location,c.status].join(' ').toLowerCase().includes(query.toLowerCase()));
-  return <><Heading eyebrow="DATA MANAGEMENT · CHARLES" title="Feedback cases" description="Review case records received by Town Councils, track case status and locate recurring issues."/><State error={error} ready={!!data}/>{data && <div className="card"><div className="table-tools"><label className="search"><Search size={16}/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search cases, category or location..." aria-label="Search feedback cases"/></label><span className="count">{filtered.length} case(s)</span></div><div className="table-wrap"><table><thead><tr><th>Case ID</th><th>District</th><th>Location</th><th>Category</th><th>Received</th><th>Officer</th><th>Status</th></tr></thead><tbody>{filtered.map(c=><tr key={c.id}><td className="id">{c.caseRef}</td><td>{c.council}</td><td>Blk {c.block}{c.location ? ' · '+c.location : ''}</td><td>{c.category}</td><td>{c.receivedAt.slice(0,10)}</td><td>{c.assignedOfficer ?? '—'}</td><td><Badge value={c.status}/></td></tr>)}</tbody></table>{!filtered.length&&<p className="empty">No matching cases.</p>}</div></div>}</>;
-}
+function Cases(){ return <GroundCases/>; }
 function Analytics(){
   const {data,error}=useApi<ListResult<Kpi>>('kpis'); const [selected,setSelected]=useState('K1');
   const current=data?.data.find(k=>k.id===selected)??data?.data[0];

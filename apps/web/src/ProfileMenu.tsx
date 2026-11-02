@@ -3,6 +3,7 @@ import { NavLink } from 'react-router-dom';
 import { SETTINGS_KEY } from './appearance';
 import { getSavedProfilePhoto } from './profile-photo';
 import './profile-menu.css';
+import { RolePicker } from './role-preview';
 
 type Profile = { displayName: string; jobTitle: string };
 
@@ -64,5 +65,7 @@ export default function ProfileMenu() {
         <span className="profile-trigger-role">{profile.jobTitle}</span>
       </span>
     </NavLink>
+    <RolePicker/>
+    <NavLink to="/dev-tools" className="rp-devtools-link">Prototype management</NavLink>
   </div>;
 }

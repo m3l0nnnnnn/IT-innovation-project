@@ -1,0 +1,24 @@
+/* Visual role preview, not authentication or authorisation. */
+.rp-banner{display:flex;align-items:center;gap:9px;border:1px solid #d7a757;
+ background:#fff3da;color:#7a5826;border-radius:9px;padding:10px 13px;
+ font-size:11px;font-weight:700;line-height:1.6;margin-bottom:19px}
+.rp-banner svg{flex:none}
+.rp-banner span{flex:1}
+.rp-banner button{display:inline-flex;align-items:center;gap:6px;border:1px solid #c99c54;
+ border-radius:8px;padding:7px 9px;background:transparent;color:inherit;font-size:11px;font-weight:800}
+.rp-banner.rp-admin{background:var(--ui-soft,#edf7f6);color:var(--ui-muted-strong,#647e8d);border-color:var(--ui-border,#d9e5ed)}
+.rp-picker{display:grid;gap:5px;color:#a6c8d6;font-size:11px;font-weight:800;
+ padding:12px 6px 5px}
+.rp-picker select{border:1px solid #375c70;border-radius:8px;background:#153447;
+ color:#d8f1f7;padding:9px 8px;max-width:100%;font-size:11px}
+.rp-picker small{font-weight:400;color:#8ab0c2;font-size:10px;line-height:1.45}
+.sidebar.sidebar-collapsed .rp-picker{display:none}
+@media(max-width:850px){.sidebar .rp-picker{display:none}}
+@media(max-width:600px){.rp-banner{align-items:start;flex-wrap:wrap}.rp-banner button{margin-left:24px}}
+
+
+.rp-devtools-link{display:block;text-align:center;margin:5px 6px 2px;padding:8px 7px;border:1px solid #31576b;
+ border-radius:8px;color:#addbe3;font-weight:700;font-size:11px}
+.rp-devtools-link:hover{background:#153c51;color:white}
+.sidebar.sidebar-collapsed .rp-devtools-link{display:none}
+@media(max-width:850px){.sidebar .rp-devtools-link{display:none}}
