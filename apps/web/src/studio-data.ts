@@ -78,7 +78,7 @@ export function classify(current:number,projected:number,metric:DemoMetric,buffe
 let rules:DemoRule={buffer:3,horizon:2,enabled:METRICS.map(m=>m.id)};
 let states:Record<string,AlertState>={};
 const seedCouncils=COUNCILS;
-let actions:DemoAction[]=seedCouncils.slice(0,4).map((c,i)=>({
+let actions:DemoAction[]=seedCouncils.slice(0,4).map((c,i):DemoAction=>({
   id:'ACT-'+String(i+1).padStart(3,'0'),councilId:c.id,council:c.name,
   alertId:c.id+':response',
   title:['Review repeat feedback handling','Assign backlog review officer','Check overdue feedback escalation','Review weekly closure process'][i],
