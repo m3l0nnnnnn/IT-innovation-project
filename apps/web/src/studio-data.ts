@@ -165,3 +165,5 @@ export function weeklyDigest(councilId=''){
   const currentActions=actions.filter(a=>(!councilId||a.councilId===councilId)&&a.status!=='Completed');
   return {risk,actions:currentActions};
 }
+
+export function addAuditEntry(event:string,detail:string){record(event,detail);}
