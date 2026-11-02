@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
-import axios from 'axios';
+import { getDemoMeta, getDemoSummary, listDemoCases, getDemoCase, createDemoCase, patchDemoCase } from './ground-demo';
 import {
   AlertTriangle, ArrowLeft, CheckCircle2, ChevronLeft, ChevronRight,
   ClipboardList, Clock3, FilePlus2, FilterX, Pencil, RefreshCcw, Search, X
@@ -45,11 +45,6 @@ function ageDays(value:string) {
   return Math.max(0,Math.floor((Date.now()-new Date(value).getTime())/86_400_000));
 }
 function messageOf(error:unknown):string {
-  if(axios.isAxiosError(error)){
-    const body=error.response?.data as {message?:string;issues?:{message:string}[]} | undefined;
-    if(body?.issues?.length)return body.issues.map(i=>i.message).join('; ');
-    return body?.message??'Unable to reach the API. Check the backend connection.';
-  }
   return error instanceof Error?error.message:'An unexpected error occurred.';
 }
 function formFrom(row:CaseItem):Draft {
@@ -102,8 +97,8 @@ export default function GroundCases(){
 
   useEffect(()=>{
     let active=true;
-    axios.get<MetaResponse>('/api/cases/meta')
-      .then(({data})=>{if(active)setMeta(data)})
+    getDemoMeta()
+      .then(data=>{if(active)setMeta(data)})
       .catch(e=>{if(active)setError(messageOf(e))});
     return ()=>{active=false};
   },[]);
@@ -127,7 +122,7 @@ export default function GroundCases(){
   useEffect(()=>{
     let active=true;
     setLoading(true);setError('');
-    axios.get<ListResponse>('/api/cases?'+params).then(({data})=>{
+    listDemoCases(new URLSearchParams(params)).then(data=>{
       if(active){setRecords(data);setLoading(false)}
     }).catch(e=>{if(active){setError(messageOf(e));setLoading(false)}});
     return ()=>{active=false};
@@ -135,9 +130,7 @@ export default function GroundCases(){
 
   useEffect(()=>{
     let active=true;
-    const p=new URLSearchParams();
-    if(townCouncilId)p.set('townCouncilId',townCouncilId);
-    axios.get<SummaryResponse>('/api/cases/summary?'+p.toString()).then(({data})=>{
+    getDemoSummary(townCouncilId).then(data=>{
       if(active)setSummary(data)
     }).catch(()=>{if(active)setSummary(null)});
     return ()=>{active=false};
@@ -147,8 +140,8 @@ export default function GroundCases(){
     if(!selectedRef){setDetail(null);return;}
     let active=true;
     setDetailLoading(true);setDetailError('');
-    axios.get<{data:CaseItem}>('/api/cases/'+encodeURIComponent(selectedRef)).then(({data})=>{
-      if(active){setDetail(data.data);setDetailLoading(false)}
+    getDemoCase(selectedRef).then(data=>{
+      if(active){setDetail(data);setDetailLoading(false)}
     }).catch(e=>{if(active){setDetail(null);setDetailLoading(false);setDetailError(messageOf(e))}});
     return ()=>{active=false};
   },[selectedRef,revision]);
@@ -176,12 +169,12 @@ export default function GroundCases(){
     setSaving(true);
     try {
       if(editing==='new'){
-        const {data}=await axios.post<{data:CaseItem}>('/api/cases',casePayload(draft));
-        setSelectedRef(data.data.caseRef);
-        setNotice('Case '+data.data.caseRef+' created successfully.');
+        const created=await createDemoCase(casePayload(draft));
+        setSelectedRef(created.caseRef);
+        setNotice('Demo case '+created.caseRef+' created (until refresh).');
       } else if(detail) {
-        await axios.patch('/api/cases/'+encodeURIComponent(detail.caseRef),casePayload(draft));
-        setNotice('Case '+detail.caseRef+' updated successfully.');
+        await patchDemoCase(detail.caseRef,casePayload(draft));
+        setNotice('Demo case '+detail.caseRef+' updated (until refresh).');
       }
       setEditing(null);setRevision(v=>v+1);
     } catch(e){setFormError(messageOf(e))}
@@ -192,8 +185,8 @@ export default function GroundCases(){
     if(!window.confirm(description+' for '+detail.caseRef+'?'))return;
     setSaving(true);setDetailError('');
     try{
-      await axios.patch('/api/cases/'+encodeURIComponent(detail.caseRef),patch);
-      setNotice('Case '+detail.caseRef+' updated.');
+      await patchDemoCase(detail.caseRef,patch);
+      setNotice('Demo case '+detail.caseRef+' updated (until refresh).');
       setRevision(v=>v+1);
     } catch(e){setDetailError(messageOf(e))}
     finally{setSaving(false)}
@@ -211,7 +204,7 @@ export default function GroundCases(){
       </button>
     </header>
     <div className="ground-note"><AlertTriangle size={17}/>
-      <span>Prototype workspace using synthetic data. The 7-day overdue threshold is illustrative and requires EMS confirmation.</span>
+      <span>Fictional demo data only. Changes reset on refresh and never reach Supabase. The 7-day overdue rule is illustrative.</span>
     </div>
     {notice&&<div className="ground-success" role="status"><CheckCircle2 size={17}/>{notice}<button onClick={()=>setNotice('')} aria-label="Dismiss notification"><X size={16}/></button></div>}
     <div className="ground-stats">
@@ -329,7 +322,7 @@ export default function GroundCases(){
               <CheckCircle2 size={16}/>{detail.status==='Open'?'Close case':'Reopen case'}
             </button>
           </div>
-          <p className="ground-warning">Prototype controls update the connected synthetic database. No production permissions are configured yet.</p>
+          <p className="ground-warning">This is a demonstration. Changes only affect the current browser session and reset on refresh.</p>
         </>}
       </section>
     </div>}
@@ -381,7 +374,7 @@ export default function GroundCases(){
             <button type="button" className="ground-secondary" disabled={saving} onClick={()=>setEditing(null)}><ArrowLeft size={15}/> Cancel</button>
             <button type="submit" className="primary-button" disabled={saving}>{saving?'Saving…':editing==='new'?'Create case':'Save changes'}</button>
           </div>
-          <p className="ground-warning">Use synthetic information only. RBAC and auditing must be completed before any production deployment.</p>
+          <p className="ground-warning">Fictional demo only. Nothing will be saved to the project database.</p>
         </form>
       </section>
     </div>}
