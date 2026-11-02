@@ -14,6 +14,7 @@ import StudioRisk from './StudioRisk';
 import StudioReports from './StudioReports';
 import StudioAssistant from './StudioAssistant';
 import { RoleBanner, isPreviewVisible, useDemoRole } from './role-preview';
+import DeveloperTools from './DeveloperTools';
 
 type Kpi = { id:string; name:string; unit:string; value:number; target:number; trend:number; points:number[] };
 type Alert = { id:string; council:string; title:string; severity:'Watch'|'Warning'|'Critical'; status:string; reason:string; date:string };
@@ -156,6 +157,7 @@ function Layout() {
       <Route path="reports" element={<StudioReports/>}/>
       <Route path="assistant" element={<StudioAssistant/>}/>
       <Route path="settings" element={<SettingsPage/>}/>
+      <Route path="dev-tools" element={<DeveloperTools/>}/>
       {/* Legacy starter pages are retained for comparison; not included in prototype navigation. */}
       <Route path="legacy/dashboard" element={<Dashboard/>}/>
       <Route path="legacy/analytics" element={<Analytics/>}/>
