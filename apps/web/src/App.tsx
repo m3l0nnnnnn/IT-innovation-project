@@ -8,6 +8,12 @@ import ProfileMenu from './ProfileMenu';
 import GroundCases from './GroundCases';
 import GroundInsightsPage from './GroundInsights';
 import EstateMonitoring from './EstateMonitoring';
+import StudioDashboard from './StudioDashboard';
+import StudioAnalytics from './StudioAnalytics';
+import StudioRisk from './StudioRisk';
+import StudioReports from './StudioReports';
+import StudioAssistant from './StudioAssistant';
+import { RoleBanner, isPreviewVisible, useDemoRole } from './role-preview';
 
 type Kpi = { id:string; name:string; unit:string; value:number; target:number; trend:number; points:number[] };
 type Alert = { id:string; council:string; title:string; severity:'Watch'|'Warning'|'Critical'; status:string; reason:string; date:string };
@@ -48,20 +54,28 @@ const navGroups=[
     {to:'/operations/inspections',label:'Estate Inspections'},
     {to:'/operations/map',label:'Block Map'}
   ]},
-  {label:'Performance Analytics',icon:BarChart3,items:[{to:'/analytics',label:'KPI Analytics'}]},
+  {label:'Performance Analytics',icon:BarChart3,items:[
+    {to:'/analytics',label:'KPI Analytics & Scenarios'}
+  ]},
   {label:'Risk & Actions',icon:BellRing,items:[
     {to:'/alerts',label:'Early Warnings'},
-    {to:'/actions',label:'Corrective Actions'}
+    {to:'/actions',label:'Corrective Actions'},
+    {to:'/risk/rules',label:'Warning Rules'},
+    {to:'/risk/replay',label:'Historical Replay'}
   ]},
   {label:'Management Reports',icon:FileText,items:[
-    {to:'/reports',label:'Reports & Scores'},
-    {to:'/assistant',label:'AI Assistant (planned)'}
+    {to:'/reports',label:'Reports & Digest'},
+    {to:'/assistant',label:'Insights Assistant (demo)'}
   ]}
 ];
 const SIDEBAR_PREFERENCE_KEY = 'estara.ui.sidebar.collapsed.v1';
 
 function Sidebar() {
   const location=useLocation();
+  const previewRole=useDemoRole();
+  const visibleGroups=navGroups.map(group=>({
+    ...group,items:group.items.filter(item=>isPreviewVisible(previewRole,item.to))
+  })).filter(group=>group.items.length>0);
   const [collapsed,setCollapsed]=useState<boolean>(()=>{
     try{return window.localStorage.getItem(SIDEBAR_PREFERENCE_KEY)==='true';}
     catch{return false;}
@@ -70,7 +84,7 @@ function Sidebar() {
   // wins until the user navigates to a different route.
   const [manualGroup,setManualGroup]=useState<string|null>(null);
   useEffect(()=>setManualGroup(null),[location.pathname]);
-  const routeGroup=navGroups.find(g=>g.items.some(item=>item.to===location.pathname))?.label;
+  const routeGroup=visibleGroups.find(g=>g.items.some(item=>item.to===location.pathname))?.label;
   const openGroup=manualGroup??routeGroup??'Ground Operations';
 
   function toggleSidebar(){
@@ -106,7 +120,7 @@ function Sidebar() {
         className={({isActive})=>'nav-item'+(isActive?' active':'')}>
         <LayoutDashboard size={18}/><span>Dashboard</span>
       </NavLink>
-      {navGroups.map((group,index)=><div className="nav-group" key={group.label}>
+      {visibleGroups.map((group,index)=><div className="nav-group" key={group.label}>
         <button type="button" className={'nav-item nav-group-button'+(routeGroup===group.label?' current':'')}
           onClick={()=>toggleGroup(group.label)} title={group.label} aria-label={group.label}
           aria-expanded={!collapsed&&openGroup===group.label} aria-controls={'nav-group-'+index}>
@@ -126,20 +140,33 @@ function Sidebar() {
   </aside>;
 }
 function Layout() {
-  return <div className="app-layout"><Sidebar/><main className="main-area"><div className="content"><Routes>
-    <Route index element={<Dashboard/>}/>
-    <Route path="cases" element={<Cases/>}/>
-    <Route path="operations/insights" element={<GroundInsightsPage/>}/>
-    <Route path="operations/inspections" element={<EstateMonitoring initialView="inspections"/>}/>
-    <Route path="operations/map" element={<EstateMonitoring initialView="map"/>}/>
-    <Route path="analytics" element={<Analytics/>}/>
-    <Route path="alerts" element={<Alerts/>}/>
-    <Route path="actions" element={<Actions/>}/>
-    <Route path="reports" element={<Reports/>}/>
-    <Route path="assistant" element={<Assistant/>}/>
-    <Route path="settings" element={<SettingsPage/>}/>
-    <Route path="*" element={<div className="card">Page not found. <Link to="/">Return to dashboard</Link>.</div>}/>
-  </Routes><footer>Estara prototype · All records and thresholds shown are illustrative, not EMS production data.</footer></div></main></div>;
+  return <div className="app-layout"><Sidebar/><main className="main-area"><div className="content">
+    <RoleBanner/>
+    <Routes>
+      <Route index element={<StudioDashboard/>}/>
+      <Route path="cases" element={<Cases/>}/>
+      <Route path="operations/insights" element={<GroundInsightsPage/>}/>
+      <Route path="operations/inspections" element={<EstateMonitoring initialView="inspections"/>}/>
+      <Route path="operations/map" element={<EstateMonitoring initialView="map"/>}/>
+      <Route path="analytics" element={<StudioAnalytics/>}/>
+      <Route path="alerts" element={<StudioRisk view="alerts"/>}/>
+      <Route path="actions" element={<StudioRisk view="actions"/>}/>
+      <Route path="risk/rules" element={<StudioRisk view="rules"/>}/>
+      <Route path="risk/replay" element={<StudioRisk view="replay"/>}/>
+      <Route path="reports" element={<StudioReports/>}/>
+      <Route path="assistant" element={<StudioAssistant/>}/>
+      <Route path="settings" element={<SettingsPage/>}/>
+      {/* Legacy starter pages are retained for comparison; not included in prototype navigation. */}
+      <Route path="legacy/dashboard" element={<Dashboard/>}/>
+      <Route path="legacy/analytics" element={<Analytics/>}/>
+      <Route path="legacy/alerts" element={<Alerts/>}/>
+      <Route path="legacy/actions" element={<Actions/>}/>
+      <Route path="legacy/reports" element={<Reports/>}/>
+      <Route path="legacy/assistant" element={<Assistant/>}/>
+      <Route path="*" element={<div className="card">Page not found. <Link to="/">Return to dashboard</Link>.</div>}/>
+    </Routes>
+    <footer>Estara prototype · All records, risk scores, rules and recommendations are illustrative.</footer>
+  </div></main></div>;
 }
 function Dashboard(){
   const {data,error}=useApi<Overview>('overview');
