@@ -7,6 +7,7 @@ import SettingsPage from './Settings';
 import ProfileMenu from './ProfileMenu';
 import GroundCases from './GroundCases';
 import GroundInsightsPage from './GroundInsights';
+import EstateMonitoring from './EstateMonitoring';
 
 type Kpi = { id:string; name:string; unit:string; value:number; target:number; trend:number; points:number[] };
 type Alert = { id:string; council:string; title:string; severity:'Watch'|'Warning'|'Critical'; status:string; reason:string; date:string };
@@ -43,7 +44,9 @@ function Heading({eyebrow,title,description,action}:{eyebrow:string;title:string
 const navGroups=[
   {label:'Ground Operations',icon:Building2,items:[
     {to:'/cases',label:'Feedback Cases'},
-    {to:'/operations/insights',label:'Operational Insights'}
+    {to:'/operations/insights',label:'Operational Insights'},
+    {to:'/operations/inspections',label:'Estate Inspections'},
+    {to:'/operations/map',label:'Block Map'}
   ]},
   {label:'Performance Analytics',icon:BarChart3,items:[{to:'/analytics',label:'KPI Analytics'}]},
   {label:'Risk & Actions',icon:BellRing,items:[
@@ -127,6 +130,8 @@ function Layout() {
     <Route index element={<Dashboard/>}/>
     <Route path="cases" element={<Cases/>}/>
     <Route path="operations/insights" element={<GroundInsightsPage/>}/>
+    <Route path="operations/inspections" element={<EstateMonitoring initialView="inspections"/>}/>
+    <Route path="operations/map" element={<EstateMonitoring initialView="map"/>}/>
     <Route path="analytics" element={<Analytics/>}/>
     <Route path="alerts" element={<Alerts/>}/>
     <Route path="actions" element={<Actions/>}/>
