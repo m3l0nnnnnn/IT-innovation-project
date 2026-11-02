@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { getDemoMeta, getDemoSummary, listDemoCases, getDemoCase, createDemoCase, patchDemoCase } from './ground-demo';
 import {
   AlertTriangle, ArrowLeft, CheckCircle2, ChevronLeft, ChevronRight,
-  ClipboardList, Clock3, FilePlus2, FilterX, Pencil, RefreshCcw, Search, X
+  Clock3, FilePlus2, FilterX, Pencil, RefreshCcw, Search, X
 } from 'lucide-react';
 import './ground-operations.css';
 
@@ -180,7 +180,7 @@ export default function GroundCases(){
     } catch(e){setFormError(messageOf(e))}
     finally{setSaving(false)}
   }
-  async function updateStatus(patch:Record<string,string>,description:string){
+  async function updateStatus(patch:{status?:CaseStatus;acknowledgedAt?:string},description:string){
     if(!detail)return;
     if(!window.confirm(description+' for '+detail.caseRef+'?'))return;
     setSaving(true);setDetailError('');
