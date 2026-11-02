@@ -1,8 +1,8 @@
 import { useEffect, useState, type ReactNode } from 'react';
-import { Link, NavLink, Route, Routes } from 'react-router-dom';
+import { Link, NavLink, Route, Routes, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { AreaChart, Area, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import { LayoutDashboard, MessageSquare, BarChart3, BellRing, ClipboardList, FileText, Bot, Search, Download, TrendingDown, TrendingUp, ShieldCheck, ArrowRight, AlertTriangle, Building2, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { LayoutDashboard, MessageSquare, BarChart3, BellRing, ClipboardList, FileText, Bot, Search, Download, TrendingDown, TrendingUp, ShieldCheck, ArrowRight, AlertTriangle, Building2, PanelLeftClose, PanelLeftOpen, ChevronDown, ChevronRight, Settings as SettingsIcon } from 'lucide-react';
 import SettingsPage from './Settings';
 import ProfileMenu from './ProfileMenu';
 
@@ -37,67 +37,84 @@ function Badge({value}:{value:string}) {
 function Heading({eyebrow,title,description,action}:{eyebrow:string;title:string;description:string;action?:ReactNode}) {
   return <header className="page-header"><div><p className="eyebrow">{eyebrow}</p><h1>{title}</h1><p className="subtext">{description}</p></div>{action}</header>;
 }
-const nav = [
-  {to:'/',label:'Overview',icon:LayoutDashboard,end:true},
-  {to:'/cases',label:'Feedback Cases',icon:MessageSquare,end:false},
-  {to:'/analytics',label:'KPI Analytics',icon:BarChart3,end:false},
-  {to:'/alerts',label:'Early Warnings',icon:BellRing,end:false},
-  {to:'/actions',label:'Corrective Actions',icon:ClipboardList,end:false},
-  {to:'/reports',label:'Reports & Scores',icon:FileText,end:false},
-  {to:'/assistant',label:'AI Assistant',icon:Bot,end:false}
+// One admin workspace, grouped by operational workflow. Roles/permissions will be
+// enforced by the API in a later phase, not by hiding these links.
+const navGroups=[
+  {label:'Ground Operations',icon:Building2,items:[{to:'/cases',label:'Feedback Cases'}]},
+  {label:'Performance Analytics',icon:BarChart3,items:[{to:'/analytics',label:'KPI Analytics'}]},
+  {label:'Risk & Actions',icon:BellRing,items:[
+    {to:'/alerts',label:'Early Warnings'},
+    {to:'/actions',label:'Corrective Actions'}
+  ]},
+  {label:'Management Reports',icon:FileText,items:[
+    {to:'/reports',label:'Reports & Scores'},
+    {to:'/assistant',label:'AI Assistant (planned)'}
+  ]},
+  {label:'Administration',icon:SettingsIcon,items:[{to:'/settings',label:'Settings & Profile'}]}
 ];
 const SIDEBAR_PREFERENCE_KEY = 'estara.ui.sidebar.collapsed.v1';
 
 function Sidebar() {
-  const [collapsed, setCollapsed] = useState<boolean>(() => {
-    try {
-      return window.localStorage.getItem(SIDEBAR_PREFERENCE_KEY) === 'true';
-    } catch {
-      return false;
-    }
+  const location=useLocation();
+  const [collapsed,setCollapsed]=useState<boolean>(()=>{
+    try{return window.localStorage.getItem(SIDEBAR_PREFERENCE_KEY)==='true';}
+    catch{return false;}
   });
+  // The current route determines the default expanded group. Manual expansion
+  // wins until the user navigates to a different route.
+  const [manualGroup,setManualGroup]=useState<string|null>(null);
+  useEffect(()=>setManualGroup(null),[location.pathname]);
+  const routeGroup=navGroups.find(g=>g.items.some(item=>item.to===location.pathname))?.label;
+  const openGroup=manualGroup??routeGroup??'Ground Operations';
 
-  function toggleSidebar() {
-    const next = !collapsed;
+  function toggleSidebar(){
+    const next=!collapsed;
     setCollapsed(next);
-    try {
-      window.localStorage.setItem(SIDEBAR_PREFERENCE_KEY, String(next));
-    } catch {
-      // The UI still works when browser storage is disabled.
+    try{window.localStorage.setItem(SIDEBAR_PREFERENCE_KEY,String(next));}catch{}
+  }
+  function toggleGroup(label:string){
+    if(collapsed){
+      setCollapsed(false);
+      try{window.localStorage.setItem(SIDEBAR_PREFERENCE_KEY,'false');}catch{}
+      setManualGroup(label);
+    } else {
+      setManualGroup(openGroup===label?'':label);
     }
   }
-
-  return <aside className={'sidebar' + (collapsed ? ' sidebar-collapsed' : '')}>
+  return <aside className={'sidebar'+(collapsed?' sidebar-collapsed':'')}>
     <div className="sidebar-header">
       <Link className="brand" to="/" title="Estara home" aria-label="Estara home">
         <img className="brand-logo" src="/estara-logo-transparent.webp" alt="Estara logo"/>
         <div className="brand-text"><strong>Estara</strong><small>PERFORMANCE INTELLIGENCE</small></div>
       </Link>
-      <button
-        type="button"
-        className="sidebar-toggle"
-        onClick={toggleSidebar}
-        aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-        aria-expanded={!collapsed}
-        aria-controls="estara-primary-navigation"
-        title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-      >
-        {collapsed ? <PanelLeftOpen size={19}/> : <PanelLeftClose size={19}/>}
+      <button type="button" className="sidebar-toggle" onClick={toggleSidebar}
+        aria-label={collapsed?'Expand sidebar':'Collapse sidebar'}
+        aria-expanded={!collapsed} aria-controls="estara-primary-navigation"
+        title={collapsed?'Expand sidebar':'Collapse sidebar'}>
+        {collapsed?<PanelLeftOpen size={19}/>:<PanelLeftClose size={19}/>}
       </button>
     </div>
-    <p className="side-label">WORKSPACE</p>
+    {!collapsed&&<p className="side-label">ADMIN WORKSPACE · PROTOTYPE</p>}
     <nav id="estara-primary-navigation" className="nav" aria-label="Main navigation">
-      {nav.map(item => <NavLink
-        key={item.to}
-        to={item.to}
-        end={item.end}
-        title={item.label}
-        aria-label={item.label}
-        className={({isActive}) => 'nav-item' + (isActive ? ' active' : '')}
-      >
-        <item.icon size={18}/>
-        <span>{item.label}</span>
-      </NavLink>)}
+      <NavLink to="/" end title="Dashboard" aria-label="Dashboard"
+        className={({isActive})=>'nav-item'+(isActive?' active':'')}>
+        <LayoutDashboard size={18}/><span>Dashboard</span>
+      </NavLink>
+      {navGroups.map((group,index)=><div className="nav-group" key={group.label}>
+        <button type="button" className={'nav-item nav-group-button'+(routeGroup===group.label?' current':'')}
+          onClick={()=>toggleGroup(group.label)} title={group.label} aria-label={group.label}
+          aria-expanded={!collapsed&&openGroup===group.label} aria-controls={'nav-group-'+index}>
+          <group.icon size={18}/>
+          <span>{group.label}</span>
+          {!collapsed&&(openGroup===group.label?<ChevronDown size={15} className="nav-group-chevron"/>:<ChevronRight size={15} className="nav-group-chevron"/>)}
+        </button>
+        {!collapsed&&openGroup===group.label&&<div id={'nav-group-'+index} className="nav-submenu">
+          {group.items.map(item=><NavLink key={item.to} to={item.to} title={item.label}
+            className={({isActive})=>'nav-subitem'+(isActive?' active':'')}>
+            {item.label}
+          </NavLink>)}
+        </div>}
+      </div>)}
     </nav>
     <div className="sidebar-profile-area"><ProfileMenu/></div>
   </aside>;
