@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AlertTriangle, ArrowRight, BarChart3, Calculator, GitCompareArrows,
-  LineChart as LineIcon, Rows3, TrendingDown } from 'lucide-react';
+  LineChart as LineIcon, Rows3 } from 'lucide-react';
 import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { COUNCILS, METRICS, series, forecast, riskRecords, useStudioVersion,
   type MetricId, type RiskLevel } from './studio-data';
@@ -19,7 +19,7 @@ const tabs:{id:Tab;label:string;icon:typeof Rows3}[]=[
 function display(value:number,unit:string){return value.toFixed(1)+unit;}
 function RiskPill({level}:{level:RiskLevel}){return <span className={'sp-pill sp-'+level.toLowerCase()}>{level}</span>;}
 export default function StudioAnalytics(){
-  useStudioVersion();
+  const studioVersion=useStudioVersion();
   const [tab,setTab]=useState<Tab>('grid');
   const [councilId,setCouncilId]=useState(COUNCILS[0].id);
   const [metricId,setMetricId]=useState<MetricId>('response');
@@ -35,7 +35,7 @@ export default function StudioAnalytics(){
     return {metric:m,current:data.at(-1)?.value??0,prior:data.at(-2)?.value??0,
       projected:forecast(data,m,2),
       risk:riskRecords(councilId).find(r=>r.metric.id===m.id)};
-  }),[councilId]);
+  }),[councilId,studioVersion]);
   const peer=COUNCILS.map(c=>{
     const values=series(c.id,metricId);
     return {council:c.name,latest:values.at(-1)?.value??0,change:(values.at(-1)?.value??0)-(values.at(-4)?.value??0)};
