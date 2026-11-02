@@ -66,5 +66,6 @@ export default function ProfileMenu() {
       </span>
     </NavLink>
     <RolePicker/>
+    <NavLink to="/dev-tools" className="rp-devtools-link">Prototype management</NavLink>
   </div>;
 }
