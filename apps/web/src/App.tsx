@@ -2,11 +2,11 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { Link, NavLink, Route, Routes, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { AreaChart, Area, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import { LayoutDashboard, MessageSquare, BarChart3, BellRing, ClipboardList, FileText, Bot, Search, Download, TrendingDown, TrendingUp, ShieldCheck, ArrowRight, AlertTriangle, Building2, PanelLeftClose, PanelLeftOpen, ChevronDown, ChevronRight, Settings as SettingsIcon } from 'lucide-react';
+import { LayoutDashboard, MessageSquare, BarChart3, BellRing, ClipboardList, FileText, Bot, Download, TrendingDown, TrendingUp, ShieldCheck, ArrowRight, AlertTriangle, Building2, PanelLeftClose, PanelLeftOpen, ChevronDown, ChevronRight, Settings as SettingsIcon } from 'lucide-react';
 import SettingsPage from './Settings';
 import ProfileMenu from './ProfileMenu';
+import GroundCases from './GroundCases';
 
-type Case = { id:string; caseRef:string; council:string; block:string; location:string|null; category:string; receivedAt:string; status:string; assignedOfficer:string|null };
 type Kpi = { id:string; name:string; unit:string; value:number; target:number; trend:number; points:number[] };
 type Alert = { id:string; council:string; title:string; severity:'Watch'|'Warning'|'Critical'; status:string; reason:string; date:string };
 type Action = { id:string; title:string; owner:string; council:string; priority:string; status:string; due:string; alertId:string };
@@ -153,11 +153,7 @@ function Stat({icon,label,value,foot,tone}:{icon:ReactNode;label:string;value:nu
   return <article className="stat card"><span className={'stat-icon '+tone}>{icon}</span><p>{label}</p><strong>{value}</strong><small>{foot}</small></article>;
 }
 function CardTitle({title,sub}:{title:string;sub:string}){return <div className="card-head"><h2>{title}</h2><p>{sub}</p></div>}
-function Cases(){
-  const {data,error}=useApi<ListResult<Case>>('cases?pageSize=100');const [query,setQuery]=useState('');
-  const filtered=(data?.data??[]).filter(c=>[c.caseRef,c.council,c.block,c.category,c.location,c.status].join(' ').toLowerCase().includes(query.toLowerCase()));
-  return <><Heading eyebrow="DATA MANAGEMENT · CHARLES" title="Feedback cases" description="Review case records received by Town Councils, track case status and locate recurring issues."/><State error={error} ready={!!data}/>{data && <div className="card"><div className="table-tools"><label className="search"><Search size={16}/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search cases, category or location..." aria-label="Search feedback cases"/></label><span className="count">{filtered.length} case(s)</span></div><div className="table-wrap"><table><thead><tr><th>Case ID</th><th>District</th><th>Location</th><th>Category</th><th>Received</th><th>Officer</th><th>Status</th></tr></thead><tbody>{filtered.map(c=><tr key={c.id}><td className="id">{c.caseRef}</td><td>{c.council}</td><td>Blk {c.block}{c.location ? ' · '+c.location : ''}</td><td>{c.category}</td><td>{c.receivedAt.slice(0,10)}</td><td>{c.assignedOfficer ?? '—'}</td><td><Badge value={c.status}/></td></tr>)}</tbody></table>{!filtered.length&&<p className="empty">No matching cases.</p>}</div></div>}</>;
-}
+function Cases(){ return <GroundCases/>; }
 function Analytics(){
   const {data,error}=useApi<ListResult<Kpi>>('kpis'); const [selected,setSelected]=useState('K1');
   const current=data?.data.find(k=>k.id===selected)??data?.data[0];
