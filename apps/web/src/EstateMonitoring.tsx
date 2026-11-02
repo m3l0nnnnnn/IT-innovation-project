@@ -31,7 +31,7 @@ function getBlocks(cases:DemoCase[],inspections:Inspection[],councilId:string):B
     const key=id+':'+block;
     const existing=grouped.get(key);
     if(existing)return existing;
-    const next={townCouncilId:id,council,block,cases:[],inspections:[]};
+    const next:{townCouncilId:string;council:string;block:string;cases:DemoCase[];inspections:Inspection[]}={townCouncilId:id,council,block,cases:[],inspections:[]};
     grouped.set(key,next);return next;
   }
   for(const item of cases){
