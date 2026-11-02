@@ -1,0 +1,25 @@
+/* Leaflet basemap: actual OpenStreetMap street tiles, fictional demo coordinates. */
+.em-real-map-shell{position:relative;min-width:0}
+.em-real-map{height:480px;width:100%;border:1px solid var(--em-border,#d8e7ec);
+ border-radius:12px;overflow:hidden;background:#e8eff1;z-index:0}
+.em-real-map .leaflet-container{background:#e9edf0;font-family:var(--font-ui,system-ui,sans-serif)}
+.em-real-map .leaflet-control-attribution{font-size:10px!important}
+.em-real-map .leaflet-control-attribution a{color:#176d8b}
+.em-real-map .leaflet-tooltip{background:#102b3e;color:white;border:0;
+ box-shadow:0 4px 16px #0d263d44;font-size:11px;font-weight:700;
+ padding:7px 10px;max-width:250px;white-space:normal}
+.em-real-map .leaflet-tooltip:before{border-top-color:#102b3e}
+.em-real-map-watermark{position:absolute;z-index:401;top:12px;left:50%;
+ transform:translateX(-50%);pointer-events:none;text-align:center;
+ background:#0f3145e8;color:#fff;font-size:10px;letter-spacing:.05em;
+ padding:8px 12px;border-radius:8px;font-weight:800;
+ max-width:calc(100% - 110px)}
+.em-map-loading{position:absolute;inset:0;z-index:5;display:grid;place-items:center;
+ background:var(--em-soft,#f5f8fc);border:1px solid var(--em-border,#d8e7ec);
+ border-radius:12px;color:var(--em-muted,#7890a0);font-size:12px;padding:20px;text-align:center}
+.em-map-accessibility{font-size:11px;color:var(--em-muted,#7890a0);
+ margin:9px 0 0;line-height:1.55}
+@media(max-width:650px){
+ .em-real-map{height:410px}
+ .em-real-map-watermark{font-size:9px;max-width:calc(100% - 125px);padding:7px}
+}
