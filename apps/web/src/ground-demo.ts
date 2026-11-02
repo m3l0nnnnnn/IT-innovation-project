@@ -37,13 +37,13 @@ const councils=[
 const categories=['Cleanliness','Lift','Lighting','Pests','Water Seepage','Estate Maintenance','Others'];
 const channels=['OneService','Email','Call','Walk-in'];
 const descriptions=[
-  'Resident reported recurring lift interruptions during evening hours.',
-  'Lighting near the common corridor requires inspection.',
-  'Litter and bulky items observed near the bin centre.',
-  'Resident reported signs of pest activity at ground floor.',
-  'Water seepage observed at the shared stairwell wall.',
-  'Damaged walkway surface requires follow-up.',
-  'Unresolved feedback received through the service counter.'
+  'Litter and bulky items were dumped beside the bin centre.',
+  'Lift broke down again during evening hours and residents reported repeated stoppages.',
+  'Corridor light is flickering and the lift lobby is poorly lit.',
+  'Cockroaches and rats were spotted near the void deck.',
+  'Water seepage observed at the common stairwell ceiling.',
+  'Damaged walkway tiles and cracked handrail need repair.',
+  'Resident requested clarification about a shared estate facility.'
 ];
 const officers=['Officer A','Officer B','Officer C','Officer D',null];
 const now=()=>new Date();
@@ -58,11 +58,11 @@ let records:DemoCase[]=Array.from({length:80},(_,i)=>{
   return {
     id:'case-'+String(i+1).padStart(4,'0'),caseRef:caseRef(i+1),
     townCouncilId:council.id,council:council.name,
-    block:String(101+(i*11)%300),street:['North Street','East Avenue','Central Drive','West Road','South Lane'][i%5],
+    block:String(101+(i%5)*17+(Math.floor(i/5)%4)*3),street:['North Street','East Avenue','Central Drive','West Road','South Lane'][i%5],
     postalCode:null,location:['Lift lobby','Common corridor','Bin centre','Void deck','Stairwell'][i%5],
     category:categories[i%categories.length],channel:channels[i%channels.length],
     description:descriptions[i%descriptions.length],status:closed?'Closed':'Open',
-    assignedOfficer:officers[i%officers.length],
+    assignedOfficer:officers[i%5===0?[0,0,0,1,2,3,4,0][Math.floor(i/5)%8]:Math.floor(i/5)%5],
     duplicateOfId:null,duplicateOfRef:null,receivedAt,
     acknowledgedAt:i%5===0?null:daysAgo(Math.max(0,age-1)),
     closedAt,updatedAt:closedAt??receivedAt
@@ -137,4 +137,14 @@ export async function patchDemoCase(idOrRef:string,changes:DemoCasePatch):Promis
     council:council.name,updatedAt:now().toISOString()};
   records=[...records.slice(0,index),update,...records.slice(index+1)];
   return update;
+}
+
+/** Read-only snapshot shared by Feedback Cases and Operational Insights.
+ * Call on each view render rather than retaining stale copies after demo edits.
+ */
+export function getDemoCasesSnapshot(): DemoCase[] {
+  return records.map(record=>({...record}));
+}
+export function getDemoCouncils(): {id:string;name:string}[] {
+  return councils.map(council=>({...council}));
 }
