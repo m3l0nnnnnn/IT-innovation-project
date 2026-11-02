@@ -1,10 +1,10 @@
 import { useMemo, useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
-import { AlertTriangle, BellRing, CheckCircle2, ClipboardList, RotateCcw, Settings2,
-  Plus, ArrowRight, X, Clock3, ShieldCheck, History } from 'lucide-react';
+import { AlertTriangle, BellRing, CheckCircle2, ClipboardList, Settings2,
+  Plus, ArrowRight, X, ShieldCheck, History } from 'lucide-react';
 import { COUNCILS, METRICS, getRules, setRules, riskRecords, setAlertState,
   getActions, addAction, updateAction, series, trend, classify, useStudioVersion,
-  type ActionState, type AlertState, type DemoRule, type MetricId, type RiskLevel
+  type ActionState, type AlertState, type DemoRule, type RiskLevel
 } from './studio-data';
 import './studio-pages.css';
 
@@ -17,7 +17,7 @@ const emptyForm=(councilId:string):ActionForm=>({
   priority:'Medium',notes:''
 });
 export default function StudioRisk({view}:{view:View}){
-  useStudioVersion();
+  const studioVersion=useStudioVersion();
   const [councilId,setCouncilId]=useState('');
   const [severity,setSeverity]=useState('All');
   const [rulesDraft,setRulesDraft]=useState<DemoRule>(getRules);
@@ -47,7 +47,7 @@ export default function StudioRisk({view}:{view:View}){
       return [{id:c.id+metric.id,council:c.name,metric:metric.name,current,
         projected:Math.round(projected*10)/10,level,month:data.at(-1)!.month}];
     }));
-  },[councilId,replayMonth]);
+  },[councilId,replayMonth,studioVersion]);
   function saveRules(){
     try{setRules(rulesDraft);setMessage('Demo warning rules updated. All alerts use the new settings.');setError('')}
     catch(e){setError(e instanceof Error?e.message:'Could not update rules.')}
@@ -91,11 +91,13 @@ export default function StudioRisk({view}:{view:View}){
     </div>
     <div className="sp-tabs" role="navigation" aria-label="Risk and actions views">
       {[
-        ['/alerts','Alert Inbox',BellRing],['/actions','Corrective Actions',ClipboardList],
-        ['/risk/rules','Warning Rules',Settings2],['/risk/replay','Historical Replay',History]
-      ].map(([path,title,Icon])=><Link key={String(path)} to={String(path)} className={(view==='alerts'&&path==='/alerts')||
+        {path:'/alerts',title:'Alert Inbox',icon:BellRing},
+        {path:'/actions',title:'Corrective Actions',icon:ClipboardList},
+        {path:'/risk/rules',title:'Warning Rules',icon:Settings2},
+        {path:'/risk/replay',title:'Historical Replay',icon:History}
+      ].map(({path,title,icon:Icon})=><Link key={path} to={path} className={(view==='alerts'&&path==='/alerts')||
         (view==='actions'&&path==='/actions')||(view==='rules'&&path==='/risk/rules')||(view==='replay'&&path==='/risk/replay')?'active':''}>
-        <Icon size={16}/>{String(title)}</Link>)}
+        <Icon size={16}/>{title}</Link>)}
     </div>
     <div className="sp-toolbar card"><label>Town Council<select value={councilId} onChange={e=>setCouncilId(e.target.value)}>
       <option value="">All demo councils</option>{COUNCILS.map(c=><option key={c.id} value={c.id}>{c.name}</option>)}
