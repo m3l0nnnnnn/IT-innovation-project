@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
-import { getDemoMeta, getDemoSummary, listDemoCases, getDemoCase, createDemoCase, patchDemoCase } from './ground-demo';
+import { getDemoMeta, getDemoSummary, listDemoCases, getDemoCase, createDemoCase, patchDemoCase, getDemoCasesSnapshot } from './ground-demo';
+import { suggestDuplicateCases } from './ground-duplicates';
 import {
   AlertTriangle, ArrowLeft, CheckCircle2, ChevronLeft, ChevronRight,
   Clock3, FilePlus2, FilterX, Pencil, RefreshCcw, Search, X
@@ -94,6 +95,11 @@ export default function GroundCases(){
   const [saving,setSaving]=useState(false);
   const [formError,setFormError]=useState('');
   const [notice,setNotice]=useState('');
+  const duplicateMatches=useMemo(()=>editing?suggestDuplicateCases({
+    townCouncilId:draft.townCouncilId,block:draft.block,category:draft.category,
+    description:draft.description,receivedAt:draft.receivedAt
+  },getDemoCasesSnapshot(),editing==='existing'?detail?.id:undefined):[],
+  [editing,draft,detail?.id,revision]);
 
   useEffect(()=>{
     let active=true;
@@ -369,6 +375,21 @@ export default function GroundCases(){
           <label>Description *
             <textarea required rows={4} maxLength={2000} value={draft.description} placeholder="Describe the feedback without personal resident details" onChange={e=>setDraft(d=>({...d,description:e.target.value}))}/>
           </label>
+
+          {duplicateMatches.length>0&&<div className="ground-duplicates" role="status">
+            <div className="ground-duplicates-title"><AlertTriangle size={17}/>
+              <strong>{duplicateMatches.length} potential duplicate{duplicateMatches.length===1?'':'s'}</strong>
+            </div>
+            <p>These are advisory matches only. You may still save this case.</p>
+            {duplicateMatches.map(match=><div className="ground-duplicate-row" key={match.item.id}>
+              <div>
+                <strong>{match.item.caseRef}</strong> <span className={'ground-dup-'+match.strength.toLowerCase()}>{match.strength}</span>
+                <small>Blk {match.item.block} · {match.item.category} · {match.daysApart} day(s) apart</small>
+                <small>{match.reason}</small>
+              </div>
+              <button type="button" onClick={()=>{setEditing(null);setSelectedRef(match.item.caseRef)}}>Review</button>
+            </div>)}
+          </div>}
           {formError&&<div className="notice error" role="alert">{formError}</div>}
           <div className="ground-drawer-actions">
             <button type="button" className="ground-secondary" disabled={saving} onClick={()=>setEditing(null)}><ArrowLeft size={15}/> Cancel</button>
