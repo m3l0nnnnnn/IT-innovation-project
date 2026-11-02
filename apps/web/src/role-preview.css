@@ -15,3 +15,10 @@
 .sidebar.sidebar-collapsed .rp-picker{display:none}
 @media(max-width:850px){.sidebar .rp-picker{display:none}}
 @media(max-width:600px){.rp-banner{align-items:start;flex-wrap:wrap}.rp-banner button{margin-left:24px}}
+
+
+.rp-devtools-link{display:block;text-align:center;margin:5px 6px 2px;padding:8px 7px;border:1px solid #31576b;
+ border-radius:8px;color:#addbe3;font-weight:700;font-size:11px}
+.rp-devtools-link:hover{background:#153c51;color:white}
+.sidebar.sidebar-collapsed .rp-devtools-link{display:none}
+@media(max-width:850px){.sidebar .rp-devtools-link{display:none}}
