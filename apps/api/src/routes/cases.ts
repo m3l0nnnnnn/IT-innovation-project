@@ -70,6 +70,21 @@ casesRouter.get('/meta', async (_req, res) => {
   res.json({ councils, categories: caseCategories, channels: caseChannels, statuses: caseStatuses });
 });
 
+// Aggregated summary avoids counting only the currently displayed page.
+// The 7-day overdue window remains an unconfirmed EMS demo assumption.
+casesRouter.get('/summary', async (req, res) => {
+  const { townCouncilId } = caseListQuery.pick({ townCouncilId: true }).parse(req.query);
+  const where = townCouncilId ? eq(cases.townCouncilId, townCouncilId) : undefined;
+  const [summary] = await db.select({
+    total: sql<number>`count(*)::int`,
+    open: sql<number>`count(*) filter (where ${cases.status} = 'Open')::int`,
+    closed: sql<number>`count(*) filter (where ${cases.status} = 'Closed')::int`,
+    overdue: sql<number>`count(*) filter (where ${cases.status} = 'Open' and ${cases.receivedAt} < now() - interval '7 days')::int`,
+    unacknowledged: sql<number>`count(*) filter (where ${cases.status} = 'Open' and ${cases.acknowledgedAt} is null)::int`
+  }).from(cases).where(where);
+  res.json({ data: summary, overdueAfterDays: 7, demoAssumption: true });
+});
+
 casesRouter.get('/', async (req, res) => {
   const query = caseListQuery.parse(req.query);
   const filters: (SQL | undefined)[] = [
