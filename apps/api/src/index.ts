@@ -5,6 +5,7 @@ import helmet from 'helmet';
 import { ZodError } from 'zod';
 import { cases, kpis, alerts, actions, scores } from './demo.js';
 import { casesRouter } from './routes/cases.js';
+import { evaluateEarlyWarning } from './lib/early-warning.js';
 
 const app = express();
 app.disable('x-powered-by');
@@ -20,6 +21,23 @@ app.get('/api/overview', (_req,res) => res.json({
 }));
 app.use('/api/cases', casesRouter);
 app.get('/api/kpis', (_req,res) => res.json({demo:true,data:kpis}));
+// The preview evaluates actual demonstration KPI series rather than hard-coded alert cards.
+// It is read-only; it does not create database alerts or represent approved EMS thresholds.
+app.get('/api/alerts/risk-preview', (_req,res) => {
+  const data=kpis.map(kpi=>{
+    const lower=kpi.name.toLowerCase().includes('outstanding');
+    const config={
+      name:kpi.name,values:kpi.points,
+      direction:lower?'lower' as const:'higher' as const,
+      greenLimit:kpi.target,
+      redLimit:lower?kpi.target+10:kpi.target-5,
+      minValue:0,maxValue:100,
+      unit:kpi.unit
+    };
+    return {id:kpi.id,history:kpi.points,target:kpi.target,...evaluateEarlyWarning(config)};
+  });
+  res.json({demo:true,data,source:'Synthetic KPI series; thresholds and scores are unverified.'});
+});
 app.get('/api/alerts', (_req,res) => res.json({demo:true,data:alerts}));
 app.get('/api/actions', (_req,res) => res.json({demo:true,data:actions}));
 app.get('/api/reports', (_req,res) => res.json({demo:true,data:scores}));
