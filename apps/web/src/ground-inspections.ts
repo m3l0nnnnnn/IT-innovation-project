@@ -70,7 +70,7 @@ export function updateDemoInspection(ref:string,patch:Partial<Inspection>):Inspe
   return {...next};
 }
 export function currentDemoCouncils(){
-  return [...new Map(cases.map(c=>[c.townCouncilId,c.council])).entries()]
+  return [...new Map<string,string>(cases.map(c=>[c.townCouncilId,c.council] as const)).entries()]
     .map(([id,name])=>({id,name}));
 }
 /** Re-encode chosen image on a canvas to remove metadata, downscale to <=1280px,
