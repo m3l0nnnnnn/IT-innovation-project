@@ -6,6 +6,7 @@ import { LayoutDashboard, MessageSquare, BarChart3, BellRing, ClipboardList, Fil
 import SettingsPage from './Settings';
 import ProfileMenu from './ProfileMenu';
 import GroundCases from './GroundCases';
+import GroundInsightsPage from './GroundInsights';
 
 type Kpi = { id:string; name:string; unit:string; value:number; target:number; trend:number; points:number[] };
 type Alert = { id:string; council:string; title:string; severity:'Watch'|'Warning'|'Critical'; status:string; reason:string; date:string };
@@ -40,7 +41,10 @@ function Heading({eyebrow,title,description,action}:{eyebrow:string;title:string
 // One admin workspace, grouped by operational workflow. Roles/permissions will be
 // enforced by the API in a later phase, not by hiding these links.
 const navGroups=[
-  {label:'Ground Operations',icon:Building2,items:[{to:'/cases',label:'Feedback Cases'}]},
+  {label:'Ground Operations',icon:Building2,items:[
+    {to:'/cases',label:'Feedback Cases'},
+    {to:'/operations/insights',label:'Operational Insights'}
+  ]},
   {label:'Performance Analytics',icon:BarChart3,items:[{to:'/analytics',label:'KPI Analytics'}]},
   {label:'Risk & Actions',icon:BellRing,items:[
     {to:'/alerts',label:'Early Warnings'},
@@ -122,6 +126,7 @@ function Layout() {
   return <div className="app-layout"><Sidebar/><main className="main-area"><div className="content"><Routes>
     <Route index element={<Dashboard/>}/>
     <Route path="cases" element={<Cases/>}/>
+    <Route path="operations/insights" element={<GroundInsightsPage/>}/>
     <Route path="analytics" element={<Analytics/>}/>
     <Route path="alerts" element={<Alerts/>}/>
     <Route path="actions" element={<Actions/>}/>
