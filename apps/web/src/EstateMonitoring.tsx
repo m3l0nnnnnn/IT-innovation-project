@@ -7,6 +7,7 @@ import { createDemoInspection, currentDemoCouncils, getDemoInspectionsSnapshot,
   inspectionCategories, photoToDemoJpeg, updateDemoInspection,
   type Inspection, type InspectionCategory, type InspectionDraft, type InspectionPriority,
   type InspectionStatus } from './ground-inspections';
+import RealBlockMap, { demoMapCoordinates, type DemoMapPoint } from './RealBlockMap';
 import './estate-monitoring.css';
 
 type View='inspections'|'map';
@@ -85,6 +86,14 @@ export default function EstateMonitoring({initialView}:{initialView:View}){
       .sort((a,b)=>b.observedAt.localeCompare(a.observedAt));
   },[data,councilId,status,category,query]);
   const blocks=useMemo(()=>getBlocks(data.cases,data.inspections,councilId),[data,councilId]);
+  // Fictional block identifiers are placed at clearly-labelled demo positions around
+  // approximate Singapore regions. These points are not actual HDB addresses.
+  const mapPoints=useMemo<DemoMapPoint[]>(()=>blocks.map(b=>{
+    const index=councils.findIndex(c=>c.id===b.townCouncilId);
+    const [lat,lng]=demoMapCoordinates(b.townCouncilId,b.block,Math.max(0,index));
+    return {key:b.key,townCouncilId:b.townCouncilId,block:b.block,
+      council:b.council,risk:b.risk,lat,lng};
+  }),[blocks,councils]);
   const chosen=selectedInspection?data.inspections.find(i=>i.ref===selectedInspection):null;
   const block=selectedBlock?blocks.find(b=>b.key===selectedBlock):null;
   const filteredCases=useMemo(()=>data.cases.filter(c=>c.townCouncilId===draft.townCouncilId),[data,draft.townCouncilId]);
@@ -135,7 +144,7 @@ export default function EstateMonitoring({initialView}:{initialView:View}){
       <button className="primary-button" onClick={()=>openNew()} type="button"><Plus size={17}/> New observation</button>
     </header>
     <div className="em-caution"><AlertTriangle size={17}/>
-      <span>Fictional locations and inspection records only. The block map is a schematic layout, not geographic coordinates or an official estate risk rating. All changes reset on refresh.</span>
+      <span>The map uses real Singapore streets, but the demo markers are fictional positions and do not identify actual blocks. Inspection records and risk scores are illustrative. Changes reset on refresh.</span>
     </div>
     {notice&&<div className="em-success" role="status"><CheckCircle2 size={17}/>{notice}
       <button aria-label="Dismiss" onClick={()=>setNotice('')}><X size={16}/></button></div>}
@@ -196,21 +205,11 @@ export default function EstateMonitoring({initialView}:{initialView:View}){
     </>:<>
       <div className="em-map-layout">
         <div className="card em-map-card">
-          <div className="em-map-header"><div><h2>Illustrative block layout</h2><p>Markers represent fictional blocks and are not positioned on a real map.</p></div>
+          <div className="em-map-header"><div><h2>Singapore street map</h2><p>Zoom, drag and select illustrative pins. Their locations are not verified block addresses.</p></div>
             <span>{blocks.length} blocks</span>
           </div>
-          <div className="em-schematic">
-            <div className="em-road em-road-1"/><div className="em-road em-road-2"/><div className="em-road em-road-3"/>
-            {blocks.map((b,index)=><button
-              type="button" key={b.key} className={'em-map-point em-risk-'+b.risk.toLowerCase()+(selectedBlock===b.key?' selected':'')}
-              style={{left:String(9+(index%5)*20)+'%',top:String(13+(Math.floor(index/5)%5)*20)+'%'}}
-              title={b.council+' — Blk '+b.block+' — '+b.risk+' (illustrative)'}
-              onClick={()=>setSelectedBlock(b.key)}>
-              <span>{b.block}</span>
-            </button>)}
-            {blocks.length===0&&<div className="em-map-empty">No fictional blocks in this selection.</div>}
-            <div className="em-map-watermark">NOT A GEOGRAPHIC MAP</div>
-          </div>
+          <RealBlockMap points={mapPoints} selectedKey={selectedBlock}
+            councilId={councilId} onPick={setSelectedBlock}/>
           <div className="em-map-legend">
             <span><i className="em-legend-low"/> Low</span><span><i className="em-legend-watch"/> Watch</span>
             <span><i className="em-legend-elevated"/> Elevated</span>
@@ -236,8 +235,8 @@ export default function EstateMonitoring({initialView}:{initialView:View}){
             <button type="button" className="primary-button em-new-at-block"
               onClick={()=>openNew({townCouncilId:block.townCouncilId,block:block.block})}><Plus size={16}/> Inspect this block</button>
           </>:<div className="em-map-instruction"><MapPin size={28}/><h2>Choose a block</h2>
-            <p>Select any marker to see the contributing case and inspection records.</p></div>}
-          <p className="em-small-disclaimer">The score is an interface demonstration, not a validated prediction or official Town Council grade.</p>
+            <p>Select an illustrative demo pin to see its linked case and inspection records.</p></div>}
+          <p className="em-small-disclaimer">Markers are deliberately approximate demo positions, not geocoded addresses. The score is not a validated prediction or official Town Council grade.</p>
         </aside>
       </div>
     </>}
