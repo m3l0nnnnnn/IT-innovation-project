@@ -184,3 +184,36 @@
     width:auto;
   }
 }
+
+
+/* TC Pulse feature migration: expandable admin workflows. */
+.nav-group{min-width:0}
+.nav-group-button{width:100%;border:0;background:transparent;font:inherit;text-align:left}
+.nav-group-button.current{color:#e8fafc}
+.nav-group-button .nav-group-chevron{margin-left:auto;color:#8bb5c6;flex:none}
+.nav-submenu{display:grid;gap:3px;margin:2px 0 6px 30px;padding-left:13px;border-left:1px solid #34586a}
+.nav-subitem{display:block;padding:10px 11px;border-radius:9px;font-size:calc(12px * var(--estara-font-scale, 1));line-height:1.3;color:#abc5d5}
+.nav-subitem:hover{background:#193d55;color:white}
+.nav-subitem.active{background:#1a5263;color:#e0fffa;font-weight:700}
+.sidebar.sidebar-collapsed .nav-group-button{justify-content:center;gap:0;padding:12px 0}
+.sidebar.sidebar-collapsed .nav-group-button span,
+.sidebar.sidebar-collapsed .nav-group-chevron{display:none}
+@media(max-width:850px) and (min-width:601px){
+  .nav-group{position:relative}
+  .nav-group-button{justify-content:center}
+  .nav-group-button span,.nav-group-chevron{display:none}
+  .nav-submenu{position:absolute;left:56px;top:-10px;z-index:20;width:226px;
+    margin:0;padding:10px;background:#102f43;border:1px solid #2f5163;
+    border-radius:10px;box-shadow:0 12px 34px #061d2c66}
+  .sidebar.sidebar-collapsed .nav-submenu{display:none}
+}
+@media(max-width:600px){
+  .sidebar .nav{align-items:flex-start}
+  .sidebar .nav-group{flex:none;min-width:132px}
+  .sidebar .nav-group-button{padding:11px;justify-content:flex-start}
+  .sidebar .nav-group-button span{display:inline}
+  .sidebar .nav-group-chevron{display:none}
+  .sidebar .nav-submenu{position:static;display:grid;width:auto;margin:4px 0 0 0;padding:0 0 0 6px;
+    background:transparent;border:0;box-shadow:none}
+  .sidebar .nav-subitem{padding:9px 5px;font-size:11px}
+}
