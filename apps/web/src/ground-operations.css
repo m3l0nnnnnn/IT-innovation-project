@@ -98,3 +98,19 @@
   .ground-details{grid-template-columns:1fr 1fr}
 }
 @media(max-width:380px){.ground-form-pair,.ground-filter-bar{grid-template-columns:1fr}.ground-filter-bar .ground-search{grid-column:auto}.ground-details{grid-template-columns:1fr}}
+
+
+/* Advisory duplicate suggestions inside the case editor. */
+.ground-duplicates{display:grid;gap:9px;border:1px solid #e7c988;border-radius:11px;
+  background:var(--ui-soft,#fff9ee);padding:14px}
+.ground-duplicates-title{display:flex;gap:8px;align-items:center;color:#ac791e;font-size:13px}
+.ground-duplicates>p{font-size:11px;color:var(--ground-muted);line-height:1.5;margin:0}
+.ground-duplicate-row{display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:10px 0;border-top:1px solid var(--ground-border)}
+.ground-duplicate-row>div{display:grid;gap:5px}
+.ground-duplicate-row strong{font-size:12px;color:var(--ground-text)}
+.ground-duplicate-row span{font-size:10px;color:#a26728}
+.ground-duplicate-row small{display:block;color:var(--ground-muted);font-size:11px}
+.ground-duplicate-row button{border:1px solid var(--ground-border);background:var(--ground-card);
+  padding:8px 11px;border-radius:8px;font-weight:700;font-size:11px;color:var(--ground-text)}
+.ground-duplicate-row button:hover{border-color:var(--ground-accent);color:var(--ground-accent)}
