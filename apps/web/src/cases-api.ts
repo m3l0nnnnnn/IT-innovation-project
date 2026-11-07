@@ -40,6 +40,26 @@ export async function patchCase(idOrRef:string,changes:CasePatch){
   return (await api.patch<{data:CaseItem}>('/'+encodeURIComponent(idOrRef),changes)).data.data;
 }
 
+export type ImportRow = {
+  rowNumber:number; result:'ready'|'duplicate'|'error'; messages:string[];
+  council:string|null; block:string|null; category:string|null; receivedAt:string|null; description:string|null;
+  value?:CaseInput&{status:CaseStatus;acknowledgedAt:string|null;closedAt:string|null};
+};
+export type ImportPreview = {
+  rows:ImportRow[]; counts:{total:number;ready:number;duplicate:number;error:number}; maxRows:number;
+};
+export const IMPORT_TEMPLATE_URL='/api/cases/import/template';
+export const IMPORT_SAMPLE_URL='/api/cases/import/sample';
+
+/** Checks an .xlsx or .csv file without saving anything. */
+export async function previewImport(file:File){
+  return (await api.post<ImportPreview>('/import/preview',file,{headers:{'Content-Type':'application/octet-stream'}})).data;
+}
+/** Saves the chosen rows from a preview; all or nothing. */
+export async function importCases(rows:NonNullable<ImportRow['value']>[]){
+  return (await api.post<{imported:number;firstRef:string;lastRef:string}>('/import',{rows})).data;
+}
+
 /** Turns an API error into a message for the user, including the first validation issue if there is one. */
 export function apiErrorMessage(error:unknown):string{
   if(axios.isAxiosError(error)){

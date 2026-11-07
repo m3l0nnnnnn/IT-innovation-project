@@ -4,9 +4,10 @@ import {
   type CaseItem, type CaseList, type CaseMeta, type CaseStatus, type CaseSummary
 } from './cases-api';
 import { suggestDuplicateCases } from './ground-duplicates';
+import CaseImport from './CaseImport';
 import {
   AlertTriangle, ArrowLeft, CheckCircle2, ChevronLeft, ChevronRight,
-  Clock3, FilePlus2, FilterX, Pencil, RefreshCcw, Search, X
+  Clock3, FilePlus2, FileUp, FilterX, Pencil, RefreshCcw, Search, X
 } from 'lucide-react';
 import './ground-operations.css';
 
@@ -83,6 +84,7 @@ export default function GroundCases(){
   const [saving,setSaving]=useState(false);
   const [formError,setFormError]=useState('');
   const [notice,setNotice]=useState('');
+  const [importing,setImporting]=useState(false);
   const [nearbyCases,setNearbyCases]=useState<CaseItem[]>([]);
   const duplicateMatches=useMemo(()=>editing?suggestDuplicateCases({
     townCouncilId:draft.townCouncilId,block:draft.block,category:draft.category,
@@ -211,9 +213,14 @@ export default function GroundCases(){
         <h1>Feedback cases</h1>
         <p className="subtext">Track resident feedback, investigate overdue issues and follow cases through resolution.</p>
       </div>
-      <button className="primary-button" type="button" onClick={openCreate} disabled={!meta}>
-        <FilePlus2 size={16}/> New case
-      </button>
+      <div className="ground-heading-actions">
+        <button className="ground-secondary" type="button" onClick={()=>{setSelectedRef(null);setEditing(null);setImporting(true)}}>
+          <FileUp size={16}/> Import
+        </button>
+        <button className="primary-button" type="button" onClick={openCreate} disabled={!meta}>
+          <FilePlus2 size={16}/> New case
+        </button>
+      </div>
     </header>
     <div className="ground-note"><AlertTriangle size={17}/>
       <span>Connected to the project database (fictional seed data). Changes are saved for the whole team. The {summary?.overdueAfterDays??7}-day overdue rule is a working assumption to confirm with EMS.</span>
@@ -403,5 +410,9 @@ export default function GroundCases(){
         </form>
       </section>
     </div>}
+    {importing&&<CaseImport onClose={()=>setImporting(false)} onImported={result=>{
+      setImporting(false);setPage(1);setRevision(v=>v+1);
+      setNotice(`Imported ${result.imported} case${result.imported===1?'':'s'} (${result.firstRef}${result.imported>1?' to '+result.lastRef:''}).`);
+    }}/>}
   </section>;
 }
