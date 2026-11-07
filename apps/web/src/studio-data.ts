@@ -117,7 +117,6 @@ export function riskRecords(councilId=''):RiskRecord[]{
       const current=points.at(-1)?.value??0,projected=forecast(points,metric,rules.horizon);
       const level=classify(current,projected,metric,rules.buffer);
       const slope=round(trend(points),2);
-      const direction=metric.higherBetter?'below':'above';
       const reason=level==='Critical'
         ?'Latest synthetic measurement breaches the illustrative threshold.'
         :level==='Warning'
