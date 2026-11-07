@@ -1,7 +1,5 @@
-import type { DemoCase } from './ground-demo';
-
 /**
- * Advisory duplicate suggestions for synthetic cases.
+ * Advisory duplicate suggestions for feedback cases.
  * TC Pulse's same-council/same-block matching logic is adapted as a pure client-side rule.
  * Suggestions never block creating a case and never automatically merge records.
  */
@@ -9,8 +7,12 @@ export type DuplicateDraft = {
   townCouncilId:string; block:string; category:string;
   description:string; receivedAt:string;
 };
-export type DuplicateSuggestion = {
-  item:DemoCase;strength:'Strong'|'Possible';similarity:number;
+export type DuplicateCandidate = {
+  id:string; caseRef:string; townCouncilId:string; block:string;
+  category:string; description:string|null; receivedAt:string;
+};
+export type DuplicateSuggestion<T extends DuplicateCandidate=DuplicateCandidate> = {
+  item:T;strength:'Strong'|'Possible';similarity:number;
   daysApart:number;reason:string;
 };
 const stop=new Set(['the','and','for','with','from','that','this','there','have','has','was','were','are','not','but',
@@ -26,12 +28,12 @@ function similarity(a:string,b:string):number{
   const intersect=[...left].filter(w=>right.has(w)).length;
   return intersect/(left.size+right.size-intersect);
 }
-export function suggestDuplicateCases(
-  draft:DuplicateDraft,cases:readonly DemoCase[],excludeId?:string
-):DuplicateSuggestion[]{
+export function suggestDuplicateCases<T extends DuplicateCandidate>(
+  draft:DuplicateDraft,cases:readonly T[],excludeId?:string
+):DuplicateSuggestion<T>[]{
   const receivedAt=Date.parse(draft.receivedAt);
   if(!draft.townCouncilId||!Number.isFinite(receivedAt)||!draft.description.trim())return [];
-  const out:DuplicateSuggestion[]=[];
+  const out:DuplicateSuggestion<T>[]=[];
   for(const item of cases){
     if(item.id===excludeId||item.townCouncilId!==draft.townCouncilId)continue;
     const days=Math.abs(receivedAt-Date.parse(item.receivedAt))/86_400_000;
