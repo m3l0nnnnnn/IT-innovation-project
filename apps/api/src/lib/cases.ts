@@ -27,6 +27,13 @@ export const createCaseBody = z.strictObject(caseFields);
 export const updateCaseBody = z.strictObject(caseFields).partial();
 export type CaseInput = z.infer<typeof createCaseBody>;
 
+// Working assumption (to confirm with EMS): an open case older than this is an exception.
+export const OVERDUE_AFTER_DAYS = 7;
+
+export const caseSummaryQuery = z.object({
+  townCouncilId: z.uuid().optional()
+});
+
 export const caseListQuery = z.object({
   townCouncilId: z.uuid().optional(),
   block: z.string().trim().toUpperCase().max(5).optional(),

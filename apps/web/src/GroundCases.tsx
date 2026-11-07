@@ -1,5 +1,8 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
-import { getDemoMeta, getDemoSummary, listDemoCases, getDemoCase, createDemoCase, patchDemoCase, getDemoCasesSnapshot } from './ground-demo';
+import {
+  getCaseMeta, getCaseSummary, listCases, getCase, createCase, patchCase, apiErrorMessage,
+  type CaseItem, type CaseList, type CaseMeta, type CaseStatus, type CaseSummary
+} from './cases-api';
 import { suggestDuplicateCases } from './ground-duplicates';
 import {
   AlertTriangle, ArrowLeft, CheckCircle2, ChevronLeft, ChevronRight,
@@ -7,26 +10,14 @@ import {
 } from 'lucide-react';
 import './ground-operations.css';
 
-type CaseStatus = 'Open' | 'Closed';
-type CaseItem = {
-  id: string; caseRef: string; townCouncilId: string; council: string;
-  block: string; street: string | null; postalCode: string | null;
-  location: string | null; category: string; channel: string;
-  description: string | null; status: CaseStatus; assignedOfficer: string | null;
-  duplicateOfId: string | null; duplicateOfRef: string | null;
-  receivedAt: string; acknowledgedAt: string | null; closedAt: string | null;
-  updatedAt: string;
-  duplicates?: {id:string; caseRef:string; status:CaseStatus; receivedAt:string}[];
-};
-type ListResponse = {data:CaseItem[];total:number;page:number;pageSize:number};
-type SummaryResponse = {data:{total:number;open:number;closed:number;overdue:number;unacknowledged:number};overdueAfterDays:number};
-type MetaResponse = {councils:{id:string;name:string}[];categories:string[];channels:string[];statuses:CaseStatus[]};
 type Draft = {
   townCouncilId:string;block:string;street:string;postalCode:string;
   location:string;category:string;channel:string;description:string;
   assignedOfficer:string;receivedAt:string;
 };
 const LIMIT=25;
+const BLOCK=/^\d{1,4}[A-Z]?$/;
+const DUPLICATE_WINDOW_MS=30*86_400_000;
 const emptyDraft:Draft={
   townCouncilId:'',block:'',street:'',postalCode:'',location:'',
   category:'Cleanliness',channel:'OneService',description:'',assignedOfficer:'',
@@ -44,9 +35,6 @@ function dateLabel(value:string|null|undefined) {
 }
 function ageDays(value:string) {
   return Math.max(0,Math.floor((Date.now()-new Date(value).getTime())/86_400_000));
-}
-function messageOf(error:unknown):string {
-  return error instanceof Error?error.message:'An unexpected error occurred.';
 }
 function formFrom(row:CaseItem):Draft {
   return {
@@ -71,9 +59,9 @@ function casePayload(form:Draft){
   };
 }
 export default function GroundCases(){
-  const [meta,setMeta]=useState<MetaResponse|null>(null);
-  const [records,setRecords]=useState<ListResponse|null>(null);
-  const [summary,setSummary]=useState<SummaryResponse|null>(null);
+  const [meta,setMeta]=useState<CaseMeta|null>(null);
+  const [records,setRecords]=useState<CaseList|null>(null);
+  const [summary,setSummary]=useState<CaseSummary|null>(null);
   const [query,setQuery]=useState('');
   const [stableQuery,setStableQuery]=useState('');
   const [townCouncilId,setTownCouncilId]=useState('');
@@ -95,17 +83,35 @@ export default function GroundCases(){
   const [saving,setSaving]=useState(false);
   const [formError,setFormError]=useState('');
   const [notice,setNotice]=useState('');
+  const [nearbyCases,setNearbyCases]=useState<CaseItem[]>([]);
   const duplicateMatches=useMemo(()=>editing?suggestDuplicateCases({
     townCouncilId:draft.townCouncilId,block:draft.block,category:draft.category,
     description:draft.description,receivedAt:draft.receivedAt
-  },getDemoCasesSnapshot(),editing==='existing'?detail?.id:undefined):[],
-  [editing,draft,detail?.id,revision]);
+  },nearbyCases,editing==='existing'?detail?.id:undefined):[],
+  [editing,draft,detail?.id,nearbyCases]);
+
+  // Duplicate candidates: cases at the same council and block within 30 days of the draft's received date.
+  const draftBlock=draft.block.trim().toUpperCase();
+  useEffect(()=>{
+    const received=Date.parse(draft.receivedAt);
+    if(!editing||!draft.townCouncilId||!BLOCK.test(draftBlock)||!Number.isFinite(received)){setNearbyCases([]);return;}
+    let active=true;
+    const id=window.setTimeout(()=>{
+      listCases(new URLSearchParams({
+        townCouncilId:draft.townCouncilId,block:draftBlock,pageSize:'100',
+        from:new Date(received-DUPLICATE_WINDOW_MS).toISOString(),
+        to:new Date(received+DUPLICATE_WINDOW_MS).toISOString()
+      })).then(list=>{if(active)setNearbyCases(list.data)})
+        .catch(()=>{if(active)setNearbyCases([])});
+    },300);
+    return ()=>{active=false;window.clearTimeout(id)};
+  },[editing,draft.townCouncilId,draftBlock,draft.receivedAt]);
 
   useEffect(()=>{
     let active=true;
-    getDemoMeta()
+    getCaseMeta()
       .then(data=>{if(active)setMeta(data)})
-      .catch(e=>{if(active)setError(messageOf(e))});
+      .catch(e=>{if(active)setError(apiErrorMessage(e))});
     return ()=>{active=false};
   },[]);
   useEffect(()=>{
@@ -128,15 +134,15 @@ export default function GroundCases(){
   useEffect(()=>{
     let active=true;
     setLoading(true);setError('');
-    listDemoCases(new URLSearchParams(params)).then(data=>{
+    listCases(new URLSearchParams(params)).then(data=>{
       if(active){setRecords(data);setLoading(false)}
-    }).catch(e=>{if(active){setError(messageOf(e));setLoading(false)}});
+    }).catch(e=>{if(active){setError(apiErrorMessage(e));setLoading(false)}});
     return ()=>{active=false};
   },[params,revision]);
 
   useEffect(()=>{
     let active=true;
-    getDemoSummary(townCouncilId).then(data=>{
+    getCaseSummary(townCouncilId).then(data=>{
       if(active)setSummary(data)
     }).catch(()=>{if(active)setSummary(null)});
     return ()=>{active=false};
@@ -146,9 +152,9 @@ export default function GroundCases(){
     if(!selectedRef){setDetail(null);return;}
     let active=true;
     setDetailLoading(true);setDetailError('');
-    getDemoCase(selectedRef).then(data=>{
+    getCase(selectedRef).then(data=>{
       if(active){setDetail(data);setDetailLoading(false)}
-    }).catch(e=>{if(active){setDetail(null);setDetailLoading(false);setDetailError(messageOf(e))}});
+    }).catch(e=>{if(active){setDetail(null);setDetailLoading(false);setDetailError(apiErrorMessage(e))}});
     return ()=>{active=false};
   },[selectedRef,revision]);
 
@@ -175,15 +181,15 @@ export default function GroundCases(){
     setSaving(true);
     try {
       if(editing==='new'){
-        const created=await createDemoCase(casePayload(draft));
+        const created=await createCase(casePayload(draft));
         setSelectedRef(created.caseRef);
-        setNotice('Demo case '+created.caseRef+' created (until refresh).');
+        setNotice('Case '+created.caseRef+' created.');
       } else if(detail) {
-        await patchDemoCase(detail.caseRef,casePayload(draft));
-        setNotice('Demo case '+detail.caseRef+' updated (until refresh).');
+        await patchCase(detail.caseRef,casePayload(draft));
+        setNotice('Case '+detail.caseRef+' updated.');
       }
       setEditing(null);setRevision(v=>v+1);
-    } catch(e){setFormError(messageOf(e))}
+    } catch(e){setFormError(apiErrorMessage(e))}
     finally{setSaving(false)}
   }
   async function updateStatus(patch:{status?:CaseStatus;acknowledgedAt?:string},description:string){
@@ -191,10 +197,10 @@ export default function GroundCases(){
     if(!window.confirm(description+' for '+detail.caseRef+'?'))return;
     setSaving(true);setDetailError('');
     try{
-      await patchDemoCase(detail.caseRef,patch);
-      setNotice('Demo case '+detail.caseRef+' updated (until refresh).');
+      await patchCase(detail.caseRef,patch);
+      setNotice('Case '+detail.caseRef+' updated.');
       setRevision(v=>v+1);
-    } catch(e){setDetailError(messageOf(e))}
+    } catch(e){setDetailError(apiErrorMessage(e))}
     finally{setSaving(false)}
   }
   const totalPages=Math.max(1,Math.ceil((records?.total??0)/LIMIT));
@@ -210,14 +216,14 @@ export default function GroundCases(){
       </button>
     </header>
     <div className="ground-note"><AlertTriangle size={17}/>
-      <span>Fictional demo data only. Changes reset on refresh and never reach Supabase. The 7-day overdue rule is illustrative.</span>
+      <span>Connected to the project database (fictional seed data). Changes are saved for the whole team. The {summary?.overdueAfterDays??7}-day overdue rule is a working assumption to confirm with EMS.</span>
     </div>
     {notice&&<div className="ground-success" role="status"><CheckCircle2 size={17}/>{notice}<button onClick={()=>setNotice('')} aria-label="Dismiss notification"><X size={16}/></button></div>}
     <div className="ground-stats">
       {[
         ['Total cases',summary?.data.total,'All case records'],
         ['Open',summary?.data.open,'Awaiting closure'],
-        ['Overdue',summary?.data.overdue,'Open for more than 7 days'],
+        ['Overdue',summary?.data.overdue,'Open for more than '+(summary?.overdueAfterDays??7)+' days'],
         ['Unacknowledged',summary?.data.unacknowledged,'Open without a recorded acknowledgement']
       ].map(([label,value,sub])=><div className="card ground-stat" key={String(label)}>
         <span>{label}</span><strong>{typeof value==='number'?value.toLocaleString('en-SG'):'—'}</strong><small>{sub}</small>
@@ -328,7 +334,6 @@ export default function GroundCases(){
               <CheckCircle2 size={16}/>{detail.status==='Open'?'Close case':'Reopen case'}
             </button>
           </div>
-          <p className="ground-warning">This is a demonstration. Changes only affect the current browser session and reset on refresh.</p>
         </>}
       </section>
     </div>}
@@ -395,7 +400,6 @@ export default function GroundCases(){
             <button type="button" className="ground-secondary" disabled={saving} onClick={()=>setEditing(null)}><ArrowLeft size={15}/> Cancel</button>
             <button type="submit" className="primary-button" disabled={saving}>{saving?'Saving…':editing==='new'?'Create case':'Save changes'}</button>
           </div>
-          <p className="ground-warning">Fictional demo only. Nothing will be saved to the project database.</p>
         </form>
       </section>
     </div>}

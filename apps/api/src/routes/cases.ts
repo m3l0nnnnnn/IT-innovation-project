@@ -3,7 +3,7 @@ import { and, asc, desc, eq, gte, ilike, lt, lte, or, sql, type SQL } from 'driz
 import { alias } from 'drizzle-orm/pg-core';
 import { db } from '../db/index.js';
 import { cases, townCouncils, caseCategories, caseChannels, caseStatuses } from '../db/schema.js';
-import { caseListQuery, createCaseBody, updateCaseBody, resolveCaseDates } from '../lib/cases.js';
+import { caseListQuery, caseSummaryQuery, createCaseBody, updateCaseBody, resolveCaseDates, OVERDUE_AFTER_DAYS } from '../lib/cases.js';
 
 export const casesRouter = Router();
 
@@ -70,6 +70,20 @@ casesRouter.get('/meta', async (_req, res) => {
   res.json({ councils, categories: caseCategories, channels: caseChannels, statuses: caseStatuses });
 });
 
+// Headline counts for the case workspace, optionally for one Town Council.
+casesRouter.get('/summary', async (req, res) => {
+  const { townCouncilId } = caseSummaryQuery.parse(req.query);
+  const open = sql`${cases.status} = 'Open'`;
+  const [data] = await db.select({
+    total: sql<number>`count(*)::int`,
+    open: sql<number>`count(*) filter (where ${open})::int`,
+    closed: sql<number>`count(*) filter (where ${cases.status} = 'Closed')::int`,
+    overdue: sql<number>`count(*) filter (where ${open} and ${cases.receivedAt} < now() - make_interval(days => ${OVERDUE_AFTER_DAYS}))::int`,
+    unacknowledged: sql<number>`count(*) filter (where ${open} and ${cases.acknowledgedAt} is null)::int`
+  }).from(cases).where(townCouncilId ? eq(cases.townCouncilId, townCouncilId) : undefined);
+  res.json({ data, overdueAfterDays: OVERDUE_AFTER_DAYS });
+});
+
 casesRouter.get('/', async (req, res) => {
   const query = caseListQuery.parse(req.query);
   const filters: (SQL | undefined)[] = [
@@ -81,7 +95,7 @@ casesRouter.get('/', async (req, res) => {
     query.officer ? ilike(cases.assignedOfficer, `%${query.officer}%`) : undefined,
     query.from ? gte(cases.receivedAt, query.from) : undefined,
     query.to ? lte(cases.receivedAt, query.to) : undefined,
-    query.overdue === true ? and(eq(cases.status, 'Open'), lt(cases.receivedAt, sql`now() - interval '7 days'`)) : undefined,
+    query.overdue === true ? and(eq(cases.status, 'Open'), lt(cases.receivedAt, sql`now() - make_interval(days => ${OVERDUE_AFTER_DAYS})`)) : undefined,
     query.q ? or(
       ilike(cases.caseRef, `%${query.q}%`), ilike(cases.block, `%${query.q}%`), ilike(cases.street, `%${query.q}%`),
       ilike(cases.location, `%${query.q}%`), ilike(cases.description, `%${query.q}%`)
