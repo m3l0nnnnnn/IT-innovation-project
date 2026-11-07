@@ -5,11 +5,14 @@ import helmet from 'helmet';
 import { ZodError } from 'zod';
 import { cases, kpis, alerts, actions, scores } from './demo.js';
 import { casesRouter } from './routes/cases.js';
+import { caseImportRouter } from './routes/case-import.js';
 
 const app = express();
 app.disable('x-powered-by');
 app.use(helmet());
 app.use(cors({origin:process.env.WEB_ORIGIN ?? 'http://localhost:5173'}));
+// Before the JSON parser: imports bring their own body parsers with larger limits.
+app.use('/api/cases/import', caseImportRouter);
 app.use(express.json({limit:'1mb'}));
 
 app.get('/api/health', (_req,res) => res.json({status:'ok', app:'Estara', mode:'demo'}));
@@ -30,6 +33,7 @@ app.use('/api', (_req,res) => res.status(404).json({message:'API route not found
 // Turns validation and database errors into clear responses instead of a generic 500.
 app.use((err: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
   if (err instanceof ZodError) return void res.status(400).json({message:'Invalid request.', issues:err.issues.map(i => ({path:i.path.join('.'), message:i.message}))});
+  if ((err as {type?:string}).type === 'entity.too.large') return void res.status(413).json({message:'The upload is too large. Split the file into smaller files.'});
   const code = (err as {code?:string}).code ?? (err as {cause?:{code?:string}}).cause?.code;
   if (code === '23503') return void res.status(400).json({message:'A referenced record does not exist.'});
   if (code === '23505') return void res.status(409).json({message:'A record with the same unique value already exists. Please retry.'});

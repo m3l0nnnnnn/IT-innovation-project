@@ -114,3 +114,33 @@
 .ground-duplicate-row button{border:1px solid var(--ground-border);background:var(--ground-card);
   padding:8px 11px;border-radius:8px;font-weight:700;font-size:11px;color:var(--ground-text)}
 .ground-duplicate-row button:hover{border-color:var(--ground-accent);color:var(--ground-accent)}
+
+/* Excel/CSV import drawer. */
+.ground-drawer.ground-drawer-wide{width:min(980px,100%)}
+.ground-import-intro{font-size:13px;line-height:1.7;color:var(--ground-muted);margin:0 0 18px}
+.ground-import-start{display:flex;flex-wrap:wrap;align-items:flex-start;gap:14px}
+.ground-import-drop{flex:1 1 320px;display:grid;justify-items:center;gap:8px;padding:34px 20px;text-align:center;cursor:pointer;
+  border:2px dashed var(--ground-border);border-radius:12px;background:var(--ui-surface,#f8fafc);color:var(--ground-accent)}
+.ground-import-drop:hover,.ground-import-drop:focus-within{border-color:var(--ground-accent)}
+.ground-import-drop.busy{cursor:progress;opacity:.75}
+.ground-import-drop strong{color:var(--ground-text);font-size:14px}
+.ground-import-drop small{color:var(--ground-muted);font-size:11px}
+.ground-import-drop input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+a.ground-secondary{text-decoration:none}
+.ground-import-summary{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:12px}
+.ground-import-summary>span{display:inline-flex;align-items:center;gap:7px;margin-right:auto;font-size:12px;font-weight:700;
+  color:var(--ground-text);overflow-wrap:anywhere}
+.ground-import-summary button{border:1px solid var(--ground-border);border-radius:8px;background:var(--ground-card);
+  color:var(--ground-muted);padding:7px 10px;font-size:11px;font-weight:700}
+.ground-import-summary button.active{border-color:var(--ground-accent);color:var(--ground-accent)}
+.ground-import-summary button b{margin-left:4px;color:var(--ground-text)}
+.ground-import-table{max-height:55vh;overflow:auto;border:1px solid var(--ground-border);border-radius:10px}
+.ground-import-table .ground-table{min-width:720px}
+.ground-import-table td small{max-width:360px;overflow-wrap:anywhere}
+.ground-import-table td:first-child,.ground-import-table th:first-child{width:36px}
+.ground-import-error td{opacity:.85}
+.ground-heading-actions{display:flex;flex-wrap:wrap;gap:10px}
+.ground-import-downloads{flex:0 1 250px;display:grid;gap:9px}
+.ground-import-downloads small{color:var(--ground-muted);font-size:11px;line-height:1.5}
+.ground-import-drop.dragging{border-color:var(--ground-accent);border-style:solid;background:var(--ui-soft,#eaf7f8)}
+.ground-drawer.ground-import-dragging{outline:3px dashed var(--ground-accent);outline-offset:-10px}
