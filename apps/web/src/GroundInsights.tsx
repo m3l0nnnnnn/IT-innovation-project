@@ -1,11 +1,13 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   AlertCircle, ArrowRight, BarChart3, Clock3, Layers3,
-  MapPin, MessageSquareText, RefreshCw, UsersRound
+  MessageSquareText, RefreshCw, UsersRound
 } from 'lucide-react';
 import { getDemoCasesSnapshot, getDemoCouncils } from './ground-demo';
 import { deriveGroundInsights, type WindowDays } from './ground-insights';
+import { apiErrorMessage, getCaseMeta, getHotspots, type CaseMeta, type HotspotList } from './cases-api';
+import { HotspotTable } from './Hotspots';
 import './ground-insights.css';
 
 export default function GroundInsightsPage(){
@@ -22,7 +24,32 @@ export default function GroundInsightsPage(){
   const topCategory=insights.categories[0];
   const peak=Math.max(1,...insights.categories.map(c=>c.count));
   const peakLoad=Math.max(1,...insights.workload.flatMap(g=>g.officers.map(o=>o.open)),...insights.workload.map(g=>g.unassigned.open));
-  const [showAllHotspots,setShowAllHotspots]=useState(false);
+
+  // Hotspots come from the case database; the other sections still use the demo cases.
+  // The council filter lists demo councils, which share their names with the database councils.
+  const [dbCouncils,setDbCouncils]=useState<CaseMeta['councils']|null>(null);
+  const [hotspots,setHotspots]=useState<HotspotList|null>(null);
+  const [hotspotError,setHotspotError]=useState('');
+  const hotspotDays=windowDays||90; // all history has no earlier period to compare with
+  const councilName=councils.find(c=>c.id===councilId)?.name;
+  const dbCouncilId=councilId?dbCouncils?.find(c=>c.name===councilName)?.id:'';
+  useEffect(()=>{
+    let active=true;
+    getCaseMeta().then(meta=>{if(active)setDbCouncils(meta.councils)})
+      .catch(e=>{if(active)setHotspotError(apiErrorMessage(e))});
+    return ()=>{active=false};
+  },[]);
+  useEffect(()=>{
+    if(!dbCouncils)return;
+    if(dbCouncilId===undefined){setHotspots(null);setHotspotError(`"${councilName}" is not in the case database.`);return;}
+    let active=true;
+    setHotspotError('');
+    getHotspots(hotspotDays,dbCouncilId).then(data=>{if(active)setHotspots(data)})
+      .catch(e=>{if(active){setHotspots(null);setHotspotError(apiErrorMessage(e))}});
+    return ()=>{active=false};
+  },[dbCouncils,dbCouncilId,councilName,hotspotDays,refresh]);
+  const hotspotRows=hotspots?.data??[];
+  const spikes=hotspotRows.filter(h=>h.spike).length;
   return <section className="gi-page">
     <header className="page-header gi-title-row">
       <div>
@@ -64,6 +91,22 @@ export default function GroundInsightsPage(){
         <div className="gi-stat-top"><span>{label}</span><Icon size={19}/></div>
         <strong>{value.toLocaleString('en-SG')}</strong><small>{detail}</small>
       </article>)}
+    </div>
+    <div className="gi-section-header" id="hotspots">
+      <div><p className="eyebrow">REPEATED LOCATIONS · LIVE DATA</p><h2>Repeat-case hotspots</h2>
+        <p>Top hotspots from the last {hotspotDays} days: the same kind of problem reported {hotspots?.minCases??4} or more times at one block.
+          {!windowDays&&' All history has nothing earlier to compare with, so hotspots use the last 90 days.'}</p></div>
+      <span className="gi-hotspot-chip">{hotspots?`${hotspotRows.length} hotspots · ${spikes} spikes`:'…'}</span>
+    </div>
+    <div className="card gi-hotspots">
+      {hotspotError?<p className="gi-empty gi-error"><AlertCircle size={16}/> {hotspotError}</p>:
+        !hotspots?<p className="gi-empty">Loading hotspots…</p>:
+        hotspotRows.length===0?<p className="gi-empty">No block has {hotspots.minCases} or more cases of one category in the last {hotspotDays} days.</p>:
+        <HotspotTable rows={hotspotRows} days={hotspotDays} limit={3}/>}
+      <Link className="gi-expand gi-hotspots-more"
+        to={'/operations/hotspots?'+new URLSearchParams({days:String(hotspotDays),...(dbCouncilId?{townCouncilId:dbCouncilId}:{})})}>
+        View all hotspots <ArrowRight size={14}/>
+      </Link>
     </div>
     <div className="gi-section-header">
       <div><p className="eyebrow">FEEDBACK ANALYSIS</p><h2>What residents are reporting</h2>
@@ -138,29 +181,8 @@ export default function GroundInsightsPage(){
           <p className="gi-footnote">Relative load uses case counts only. It does not account for complexity, staffing hours or individual capacity.</p>
         </article>)}
     </div>
-    <div className="gi-section-header" id="hotspots">
-      <div><p className="eyebrow">REPEATED LOCATIONS</p><h2>Block-level hotspots</h2>
-        <p>Blocks with at least three feedback reports in the selected period. Review them before concluding they represent recurring defects.</p></div>
-      <span className="gi-hotspot-chip">{insights.totals.hotspots} block groups</span>
-    </div>
-    <div className="card gi-hotspots">
-      {insights.hotspots.length===0?<p className="gi-empty">No blocks have three or more feedback cases for the current filters.</p>:
-        <>
-          <div className="gi-hotspots-head"><span>Location</span><span>Leading category</span><span>Cases</span><span>Still open</span></div>
-          {insights.hotspots.slice(0,showAllHotspots?undefined:7).map(h=><div className="gi-hotspot-row" key={h.councilId+':'+h.block}>
-            <div className="gi-hotspot-location"><span className="gi-block-icon"><MapPin size={17}/></span><div><strong>Blk {h.block}</strong><small>{h.council}</small></div></div>
-            <span>{h.leadingCategory}</span>
-            <strong>{h.count}</strong>
-            <span className="gi-open-count">{h.open} open</span>
-          </div>)}
-          {insights.hotspots.length>7&&
-            <button type="button" className="gi-expand" onClick={()=>setShowAllHotspots(v=>!v)}>
-              {showAllHotspots?'Show fewer blocks':'View all '+insights.hotspots.length+' blocks'}
-            </button>}
-        </>}
-    </div>
     <div className="gi-disclaimer">
-      All analysis is based on fictional in-memory cases shared with Feedback Management. Case changes are reflected when you reopen or refresh Insights, and reset on a browser reload. No real estate locations, personal information or EMS performance thresholds are used.
+      Repeat-case hotspots use the case database (fictional seed data). The other sections use fictional in-memory cases shared with the demo. Case changes are reflected when you reopen or refresh Insights, and reset on a browser reload. No real estate locations, personal information or EMS performance thresholds are used.
     </div>
   </section>;
 }

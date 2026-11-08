@@ -21,9 +21,9 @@ export function setDemoRole(role:DemoRole){
 /** UI navigation only: this is never a permission check. API access is not gated here. */
 const permitted:Record<DemoRole,string[]|null>={
   'Administrator':null,
-  'EMS Manager':['/','/cases','/operations/insights','/operations/inspections','/operations/map',
+  'EMS Manager':['/','/cases','/operations/insights','/operations/hotspots','/operations/inspections','/operations/map',
     '/analytics','/alerts','/actions','/risk/rules','/risk/replay','/reports','/assistant'],
-  'Estate Officer':['/','/cases','/operations/insights','/operations/inspections','/operations/map','/alerts','/actions'],
+  'Estate Officer':['/','/cases','/operations/insights','/operations/hotspots','/operations/inspections','/operations/map','/alerts','/actions'],
   'Field Inspector':['/','/cases','/operations/inspections','/operations/map'],
   'Management Viewer':['/','/analytics','/alerts','/reports','/assistant']
 };

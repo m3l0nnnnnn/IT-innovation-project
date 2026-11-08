@@ -144,3 +144,5 @@ a.ground-secondary{text-decoration:none}
 .ground-import-downloads small{color:var(--ground-muted);font-size:11px;line-height:1.5}
 .ground-import-drop.dragging{border-color:var(--ground-accent);border-style:solid;background:var(--ui-soft,#eaf7f8)}
 .ground-drawer.ground-import-dragging{outline:3px dashed var(--ground-accent);outline-offset:-10px}
+.ground-chip{display:inline-flex;align-items:center;gap:6px;align-self:end;border:1px solid var(--ground-accent);
+  border-radius:999px;background:var(--ui-soft,#eaf7f8);color:var(--ground-accent);padding:8px 12px;font-size:12px;font-weight:700}

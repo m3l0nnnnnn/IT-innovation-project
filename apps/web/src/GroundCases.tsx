@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   getCaseMeta, getCaseSummary, listCases, getCase, createCase, patchCase, apiErrorMessage,
   type CaseItem, type CaseList, type CaseMeta, type CaseStatus, type CaseSummary
@@ -63,10 +64,13 @@ export default function GroundCases(){
   const [meta,setMeta]=useState<CaseMeta|null>(null);
   const [records,setRecords]=useState<CaseList|null>(null);
   const [summary,setSummary]=useState<CaseSummary|null>(null);
+  // Links such as hotspots open the list pre-filtered: /cases?townCouncilId=…&block=…&category=…
+  const [searchParams]=useSearchParams();
   const [query,setQuery]=useState('');
   const [stableQuery,setStableQuery]=useState('');
-  const [townCouncilId,setTownCouncilId]=useState('');
-  const [category,setCategory]=useState('');
+  const [townCouncilId,setTownCouncilId]=useState(()=>searchParams.get('townCouncilId')??'');
+  const [category,setCategory]=useState(()=>searchParams.get('category')??'');
+  const [block,setBlock]=useState(()=>searchParams.get('block')??'');
   const [status,setStatus]=useState('');
   const [tab,setTab]=useState<'all'|'outstanding'>('all');
   const [page,setPage]=useState(1);
@@ -124,6 +128,7 @@ export default function GroundCases(){
     const p=new URLSearchParams({page:String(page),pageSize:String(LIMIT),sort,order});
     if(stableQuery)p.set('q',stableQuery);
     if(townCouncilId)p.set('townCouncilId',townCouncilId);
+    if(block)p.set('block',block);
     if(category)p.set('category',category);
     if(tab==='outstanding'){
       p.set('overdue','true');
@@ -131,7 +136,7 @@ export default function GroundCases(){
       p.set('status',status);
     }
     return p.toString();
-  },[page,sort,order,stableQuery,townCouncilId,category,tab,status]);
+  },[page,sort,order,stableQuery,townCouncilId,block,category,tab,status]);
 
   useEffect(()=>{
     let active=true;
@@ -162,7 +167,7 @@ export default function GroundCases(){
 
   function chooseTab(next:'all'|'outstanding'){setTab(next);setPage(1);setSelectedRef(null)}
   function resetFilters(){
-    setQuery('');setStableQuery('');setCategory('');setTownCouncilId('');setStatus('');
+    setQuery('');setStableQuery('');setCategory('');setTownCouncilId('');setBlock('');setStatus('');
     setPage(1);setSort('receivedAt');setOrder('desc');
   }
   function openCreate(){
@@ -268,6 +273,8 @@ export default function GroundCases(){
             {meta?.statuses.map(s=><option key={s} value={s}>{s}</option>)}
           </select>
         </label>}
+        {block&&<button className="ground-chip" type="button" onClick={()=>{setBlock('');setPage(1)}} aria-label={'Remove block '+block+' filter'}>
+          Blk {block} <X size={14}/></button>}
         <button className="ground-quiet" type="button" onClick={resetFilters}><FilterX size={16}/> Clear</button>
       </div>
       <div className="ground-table-toolbar">
