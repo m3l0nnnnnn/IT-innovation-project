@@ -40,6 +40,16 @@ export async function patchCase(idOrRef:string,changes:CasePatch){
   return (await api.patch<{data:CaseItem}>('/'+encodeURIComponent(idOrRef),changes)).data.data;
 }
 
+export type Hotspot = {
+  townCouncilId:string; council:string; block:string; street:string|null; category:string;
+  count:number; open:number; lastReceivedAt:string; baseline:number; spike:boolean;
+};
+export type HotspotList = {data:Hotspot[];windowDays:number;minCases:number;baselineDays:number};
+/** Repeat-case hotspots: the same category reported 4+ times at one block in the window (7–90 days). */
+export async function getHotspots(days:number,townCouncilId=''){
+  return (await api.get<HotspotList>('/hotspots',{params:{days,...(townCouncilId?{townCouncilId}:{})}})).data;
+}
+
 export type ImportRow = {
   rowNumber:number; result:'ready'|'duplicate'|'error'; messages:string[];
   council:string|null; block:string|null; category:string|null; receivedAt:string|null; description:string|null;

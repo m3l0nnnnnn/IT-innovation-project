@@ -3,6 +3,7 @@ import { and, asc, desc, eq, gte, ilike, lt, lte, or, sql, type SQL } from 'driz
 import { alias } from 'drizzle-orm/pg-core';
 import { db } from '../db/index.js';
 import { cases, townCouncils, caseCategories, caseChannels, caseStatuses } from '../db/schema.js';
+import { hotspotQuery, baselineFor, isSpike, HOTSPOT_MIN_CASES, BASELINE_DAYS } from '../lib/hotspots.js';
 import { caseListQuery, caseSummaryQuery, createCaseBody, updateCaseBody, resolveCaseDates, OVERDUE_AFTER_DAYS } from '../lib/cases.js';
 
 export const casesRouter = Router();
@@ -82,6 +83,50 @@ casesRouter.get('/summary', async (req, res) => {
     unacknowledged: sql<number>`count(*) filter (where ${open} and ${cases.acknowledgedAt} is null)::int`
   }).from(cases).where(townCouncilId ? eq(cases.townCouncilId, townCouncilId) : undefined);
   res.json({ data, overdueAfterDays: OVERDUE_AFTER_DAYS });
+});
+
+// Repeat-case hotspots in the window, each compared with its usual level (see lib/hotspots.ts).
+casesRouter.get('/hotspots', async (req, res) => {
+  const { townCouncilId, days } = hotspotQuery.parse(req.query);
+  const windowStart = sql`now() - make_interval(days => ${days})`;
+  const council = townCouncilId ? sql`and ${cases.townCouncilId} = ${townCouncilId}` : sql``;
+  const { rows } = await db.execute<{
+    town_council_id: string; council: string; block: string; category: string; street: string | null;
+    count: number; open: number; last_received_at: string; before: number;
+  }>(sql`
+    with recent as (
+      select ${cases.townCouncilId} as town_council_id, ${cases.block} as block, ${cases.category} as category,
+        count(*)::int as count,
+        count(*) filter (where ${cases.status} = 'Open')::int as open,
+        max(${cases.receivedAt}) as last_received_at,
+        mode() within group (order by ${cases.street}) as street
+      from ${cases}
+      where ${cases.receivedAt} >= ${windowStart} and ${cases.receivedAt} <= now() ${council}
+      group by 1, 2, 3
+      having count(*) >= ${HOTSPOT_MIN_CASES}
+    ), before as (
+      select ${cases.townCouncilId} as town_council_id, ${cases.block} as block, ${cases.category} as category, count(*)::int as before
+      from ${cases}
+      where ${cases.receivedAt} >= now() - make_interval(days => ${days + BASELINE_DAYS}) and ${cases.receivedAt} < ${windowStart} ${council}
+      group by 1, 2, 3
+    )
+    select r.*, ${townCouncils.name} as council, coalesce(b.before, 0)::int as before
+    from recent r
+    join ${townCouncils} on ${townCouncils.id} = r.town_council_id
+    left join before b using (town_council_id, block, category)
+  `);
+
+  const data = rows.map(r => {
+    const baseline = baselineFor(r.before, days);
+    return {
+      townCouncilId: r.town_council_id, council: r.council, block: r.block, street: r.street, category: r.category,
+      count: r.count, open: r.open, lastReceivedAt: new Date(r.last_received_at).toISOString(),
+      baseline: Math.round(baseline * 10) / 10,
+      spike: isSpike(r.count, baseline, days)
+    };
+  }).sort((a, b) => Number(b.spike) - Number(a.spike) || b.count - a.count || b.open - a.open ||
+    a.council.localeCompare(b.council) || a.block.localeCompare(b.block, undefined, { numeric: true }));
+  res.json({ data, windowDays: days, minCases: HOTSPOT_MIN_CASES, baselineDays: BASELINE_DAYS });
 });
 
 casesRouter.get('/', async (req, res) => {

@@ -7,6 +7,7 @@ import SettingsPage from './Settings';
 import ProfileMenu from './ProfileMenu';
 import GroundCases from './GroundCases';
 import GroundInsightsPage from './GroundInsights';
+import HotspotsPage from './Hotspots';
 import EstateMonitoring from './EstateMonitoring';
 import StudioDashboard from './StudioDashboard';
 import StudioAnalytics from './StudioAnalytics';
@@ -52,6 +53,7 @@ const navGroups=[
   {label:'Ground Operations',icon:Building2,items:[
     {to:'/cases',label:'Feedback Cases'},
     {to:'/operations/insights',label:'Operational Insights'},
+    {to:'/operations/hotspots',label:'Hotspots'},
     {to:'/operations/inspections',label:'Estate Inspections'},
     {to:'/operations/map',label:'Block Map'}
   ]},
@@ -147,6 +149,7 @@ function Layout() {
       <Route index element={<StudioDashboard/>}/>
       <Route path="cases" element={<Cases/>}/>
       <Route path="operations/insights" element={<GroundInsightsPage/>}/>
+      <Route path="operations/hotspots" element={<HotspotsPage/>}/>
       <Route path="operations/inspections" element={<EstateMonitoring initialView="inspections"/>}/>
       <Route path="operations/map" element={<EstateMonitoring initialView="map"/>}/>
       <Route path="analytics" element={<StudioAnalytics/>}/>
