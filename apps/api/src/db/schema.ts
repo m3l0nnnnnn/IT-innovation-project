@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, timestamp, numeric, integer, boolean, index, type AnyPgColumn } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, text, timestamp, numeric, integer, boolean, index, jsonb, primaryKey, type AnyPgColumn } from 'drizzle-orm/pg-core';
 
 // Database schema. RLS is enabled with no policies so Supabase's public Data API cannot read or write
 // these tables; the API connects as the table owner, which bypasses RLS.
@@ -36,6 +36,45 @@ export const cases = pgTable('feedback_cases', {
   index('feedback_cases_block_idx').on(t.block),
   index('feedback_cases_status_idx').on(t.status)
 ]).enableRLS();
+// KPI & Performance Analytics (Joel). Each KPI is one of the calculations in lib/kpi-calc.ts, with
+// its own parameters, target and warning threshold. Results are calculated from feedback_cases on request.
+export const kpiMetrics = ['ack_within', 'closed_within', 'overdue_open', 'avg_ack_days', 'avg_close_days', 'repeat_rate'] as const;
+
+export const kpiDefinitions = pgTable('kpi_definitions', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  name: text('name').notNull().unique(),
+  description: text('description'),
+  metric: text('metric', { enum: kpiMetrics }).notNull(), // fixed once created: changing it would rewrite the KPI's history
+  withinDays: integer('within_days'), // e.g. acknowledged within 3 days; null for metrics without a day limit
+  category: text('category', { enum: caseCategories }), // only count cases of this category; null = all
+  target: numeric('target', { mode: 'number' }).notNull(), // the acceptable standard; worse than this is a breach
+  warning: numeric('warning', { mode: 'number' }).notNull(), // early-warning line, between healthy and the target
+  active: boolean('active').notNull().default(true), // archived KPIs keep their settings history
+  sortOrder: integer('sort_order').notNull().default(0),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull()
+}).enableRLS();
+
+// A Town Council can have its own target and warning threshold for a KPI (e.g. a larger council's overdue limit).
+export const kpiCouncilTargets = pgTable('kpi_council_targets', {
+  kpiId: uuid('kpi_id').references(() => kpiDefinitions.id, { onDelete: 'cascade' }).notNull(),
+  townCouncilId: uuid('town_council_id').references(() => townCouncils.id).notNull(),
+  target: numeric('target', { mode: 'number' }).notNull(),
+  warning: numeric('warning', { mode: 'number' }).notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull()
+}, (t) => [primaryKey({ columns: [t.kpiId, t.townCouncilId] })]).enableRLS();
+
+// Who changed which KPI setting and when, so threshold changes can be reviewed.
+export const kpiChangeLog = pgTable('kpi_change_log', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  kpiId: uuid('kpi_id').references(() => kpiDefinitions.id, { onDelete: 'cascade' }).notNull(),
+  townCouncilId: uuid('town_council_id').references(() => townCouncils.id), // set for council-specific targets
+  action: text('action').notNull(), // created | updated | archived | restored | council_target_set | council_target_removed
+  changedBy: text('changed_by').notNull(),
+  changes: jsonb('changes').$type<Record<string, { from: unknown; to: unknown }>>().notNull(),
+  changedAt: timestamp('changed_at', { withTimezone: true }).defaultNow().notNull()
+}, (t) => [index('kpi_change_log_kpi_idx').on(t.kpiId, t.changedAt)]).enableRLS();
+
 export const kpis = pgTable('kpi_measurements', {
   id: uuid('id').defaultRandom().primaryKey(),
   townCouncilId: uuid('town_council_id').references(() => townCouncils.id).notNull(),

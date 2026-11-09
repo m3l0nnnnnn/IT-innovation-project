@@ -12,7 +12,8 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:ping": "tsx src/db/ping.ts",
-    "db:seed": "tsx src/db/seed.ts"
+    "db:seed": "tsx src/db/seed.ts",
+    "db:seed-kpis": "tsx src/db/seed-kpis.ts"
   },
   "dependencies": {
     "cors": "^2.8.5",

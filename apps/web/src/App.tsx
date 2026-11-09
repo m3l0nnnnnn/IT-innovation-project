@@ -11,6 +11,10 @@ import HotspotsPage from './Hotspots';
 import EstateMonitoring from './EstateMonitoring';
 import StudioDashboard from './StudioDashboard';
 import StudioAnalytics from './StudioAnalytics';
+import KpiOverview from './KpiOverview';
+import KpiTrends from './KpiTrends';
+import KpiFactors from './KpiFactors';
+import KpiSettings from './KpiSettings';
 import StudioRisk from './StudioRisk';
 import StudioReports from './StudioReports';
 import StudioAssistant from './StudioAssistant';
@@ -58,7 +62,11 @@ const navGroups=[
     {to:'/operations/map',label:'Block Map'}
   ]},
   {label:'Performance Analytics',icon:BarChart3,items:[
-    {to:'/analytics',label:'KPI Analytics & Scenarios'}
+    {to:'/analytics',label:'KPI Overview'},
+    {to:'/analytics/trends',label:'Trends & Forecast'},
+    {to:'/analytics/factors',label:'Contributing Factors'},
+    {to:'/analytics/settings',label:'KPI Settings'},
+    {to:'/analytics/scenarios',label:'Scenarios (demo)'}
   ]},
   {label:'Risk & Actions',icon:BellRing,items:[
     {to:'/alerts',label:'Early Warnings'},
@@ -132,7 +140,7 @@ function Sidebar() {
           {!collapsed&&(openGroup===group.label?<ChevronDown size={15} className="nav-group-chevron"/>:<ChevronRight size={15} className="nav-group-chevron"/>)}
         </button>
         {!collapsed&&openGroup===group.label&&<div id={'nav-group-'+index} className="nav-submenu">
-          {group.items.map(item=><NavLink key={item.to} to={item.to} title={item.label}
+          {group.items.map(item=><NavLink key={item.to} to={item.to} end title={item.label}
             className={({isActive})=>'nav-subitem'+(isActive?' active':'')}>
             {item.label}
           </NavLink>)}
@@ -152,7 +160,11 @@ function Layout() {
       <Route path="operations/hotspots" element={<HotspotsPage/>}/>
       <Route path="operations/inspections" element={<EstateMonitoring initialView="inspections"/>}/>
       <Route path="operations/map" element={<EstateMonitoring initialView="map"/>}/>
-      <Route path="analytics" element={<StudioAnalytics/>}/>
+      <Route path="analytics" element={<KpiOverview/>}/>
+      <Route path="analytics/trends" element={<KpiTrends/>}/>
+      <Route path="analytics/factors" element={<KpiFactors/>}/>
+      <Route path="analytics/settings" element={<KpiSettings/>}/>
+      <Route path="analytics/scenarios" element={<StudioAnalytics/>}/>
       <Route path="alerts" element={<StudioRisk view="alerts"/>}/>
       <Route path="actions" element={<StudioRisk view="actions"/>}/>
       <Route path="risk/rules" element={<StudioRisk view="rules"/>}/>
@@ -196,7 +208,7 @@ function Stat({icon,label,value,foot,tone}:{icon:ReactNode;label:string;value:nu
 function CardTitle({title,sub}:{title:string;sub:string}){return <div className="card-head"><h2>{title}</h2><p>{sub}</p></div>}
 function Cases(){ return <GroundCases/>; }
 function Analytics(){
-  const {data,error}=useApi<ListResult<Kpi>>('kpis'); const [selected,setSelected]=useState('K1');
+  const {data,error}=useApi<ListResult<Kpi>>('demo/kpis'); const [selected,setSelected]=useState('K1');
   const current=data?.data.find(k=>k.id===selected)??data?.data[0];
   const points=(current?.points??[]).map((value,i)=>({period:['May','Jun','Jul','Aug','Sep','Oct'][i],value,target:current?.target}));
   return <><Heading eyebrow="PERFORMANCE ANALYTICS · JOEL" title="KPI analytics" description="Compare measurements against targets and explore changes across reporting periods."/><State error={error} ready={!!data}/>{data&&<><div className="metric-grid">{data.data.map(k=><button type="button" className={'metric card'+(selected===k.id?' selected':'')} key={k.id} onClick={()=>setSelected(k.id)}><span>{k.name}</span><strong>{k.value}{k.unit}</strong><small className={k.trend<0?'down':'up'}>{k.trend<0?<TrendingDown size={14}/>:<TrendingUp size={14}/>} {k.trend>0?'+':''}{k.trend} vs previous period</small></button>)}</div><div className="card"><CardTitle title={current?.name??'KPI history'} sub="Six example reporting periods with an illustrative target"/><div className="chart large"><ResponsiveContainer width="100%" height="100%"><LineChart data={points} margin={{top:12,right:16,left:-22,bottom:4}}><CartesianGrid strokeDasharray="4 4" stroke="#e9eff4"/><XAxis dataKey="period" tick={{fontSize:11}}/><YAxis tick={{fontSize:11}}/><Tooltip/><Line dataKey="value" stroke="#119cac" strokeWidth={3} dot={{r:4}}/><Line dataKey="target" stroke="#e1a34d" strokeDasharray="6 5" dot={false}/></LineChart></ResponsiveContainer></div><p className="hint">Thresholds, projections and management scores must be verified with EMS before production use.</p></div></>}</>;

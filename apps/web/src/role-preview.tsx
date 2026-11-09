@@ -12,6 +12,8 @@ try {
 const listeners=new Set<()=>void>();
 const subscribe=(listener:()=>void)=>{listeners.add(listener);return ()=>{listeners.delete(listener);};};
 const snapshot=()=>current;
+/** The current preview role, for API calls outside React (sent as X-Estara-Role; demo only, not a permission check). */
+export function getDemoRole(){return current;}
 export function useDemoRole(){return useSyncExternalStore(subscribe,snapshot,()=>('Administrator' as DemoRole));}
 export function setDemoRole(role:DemoRole){
   current=role;
@@ -22,10 +24,11 @@ export function setDemoRole(role:DemoRole){
 const permitted:Record<DemoRole,string[]|null>={
   'Administrator':null,
   'EMS Manager':['/','/cases','/operations/insights','/operations/hotspots','/operations/inspections','/operations/map',
-    '/analytics','/alerts','/actions','/risk/rules','/risk/replay','/reports','/assistant'],
+    '/analytics','/analytics/trends','/analytics/factors','/analytics/settings','/analytics/scenarios',
+    '/alerts','/actions','/risk/rules','/risk/replay','/reports','/assistant'],
   'Estate Officer':['/','/cases','/operations/insights','/operations/hotspots','/operations/inspections','/operations/map','/alerts','/actions'],
   'Field Inspector':['/','/cases','/operations/inspections','/operations/map'],
-  'Management Viewer':['/','/analytics','/alerts','/reports','/assistant']
+  'Management Viewer':['/','/analytics','/analytics/trends','/analytics/factors','/analytics/scenarios','/alerts','/reports','/assistant']
 };
 export function isPreviewVisible(role:DemoRole,path:string){
   return permitted[role]===null||permitted[role]?.includes(path)===true;

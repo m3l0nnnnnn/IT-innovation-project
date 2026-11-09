@@ -64,14 +64,14 @@ export default function GroundCases(){
   const [meta,setMeta]=useState<CaseMeta|null>(null);
   const [records,setRecords]=useState<CaseList|null>(null);
   const [summary,setSummary]=useState<CaseSummary|null>(null);
-  // Links such as hotspots open the list pre-filtered: /cases?townCouncilId=…&block=…&category=…
+  // Links such as hotspots open the list pre-filtered: /cases?townCouncilId=…&block=…&category=…&status=Open
   const [searchParams]=useSearchParams();
   const [query,setQuery]=useState('');
   const [stableQuery,setStableQuery]=useState('');
   const [townCouncilId,setTownCouncilId]=useState(()=>searchParams.get('townCouncilId')??'');
   const [category,setCategory]=useState(()=>searchParams.get('category')??'');
   const [block,setBlock]=useState(()=>searchParams.get('block')??'');
-  const [status,setStatus]=useState('');
+  const [status,setStatus]=useState(()=>{const s=searchParams.get('status');return s==='Open'||s==='Closed'?s:'';});
   const [tab,setTab]=useState<'all'|'outstanding'>('all');
   const [page,setPage]=useState(1);
   const [sort,setSort]=useState('receivedAt');

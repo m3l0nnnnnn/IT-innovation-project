@@ -1,9 +1,10 @@
 // Seeds Town Councils and ~13 months of FICTIONAL feedback cases: npm run db:seed
-// Re-running replaces all feedback cases. The same SEED always produces the same cases (dates are relative to today).
+// Re-running replaces all feedback cases (default KPIs are only added if missing). The same SEED always produces the same cases (dates are relative to today).
 import { randomUUID } from 'node:crypto';
 import { sql } from 'drizzle-orm';
 import { db, pool } from './index.js';
 import { townCouncils, cases, caseCategories, caseChannels } from './schema.js';
+import { seedDefaultKpis } from './seed-kpis.js';
 
 const SEED = 12;
 const DAYS = 395;
@@ -162,6 +163,7 @@ async function main() {
   const open = rows.filter(r => r.status === 'Open').length;
   const duplicates = rows.filter(r => r.duplicateOfId).length;
   console.log(`Seeded ${COUNCILS.length} town councils and ${rows.length} feedback cases (${open} open, ${duplicates} duplicates).`);
+  console.log(`Added ${await seedDefaultKpis()} default KPIs (existing KPIs and their settings were kept).`);
 }
 
 try {
