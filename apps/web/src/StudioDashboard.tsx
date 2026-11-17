@@ -57,12 +57,14 @@ export default function StudioDashboard(){
   const titles={
     Administrator:['System overview','Review demo data checks, warning configuration and recent workspace changes.'],
     'EMS Manager':['Performance at a glance','Review council performance, warnings and corrective-action follow-ups.'],
+    'Estate Officer':['Case follow-up overview','Review outstanding feedback, missing acknowledgements and case progress.'],
     'Field Inspector':['Inspection overview','Review recorded inspections and follow-up observations for a selected demonstration inspector.'],
     'Management Viewer':['Management overview','Review council scores, performance changes and corrective-action progress.']
   };
   const shortcuts=role==='Administrator'?
     [{to:'/risk/rules',label:'Warning rules'},{to:'/cases',label:'Feedback records'},{to:'/settings',label:'Profile & appearance'}]:
     role==='EMS Manager'?[{to:'/analytics',label:'KPI analytics'},{to:'/alerts',label:'Review warnings'},{to:'/actions',label:'Corrective actions'},{to:'/reports',label:'Management reports'}]:
+    role==='Estate Officer'?[{to:'/cases',label:'Manage feedback cases'},{to:'/operations/insights',label:'Operational insights'},{to:'/operations/hotspots',label:'Repeat-case hotspots'}]:
     role==='Field Inspector'?[{to:'/operations/inspections',label:'Record / review inspections'},{to:'/operations/map',label:'Open block map'},{to:'/cases',label:'Feedback cases'}]:
     [{to:'/reports',label:'Reports, digest & downloads'},{to:'/analytics/trends',label:'Performance trends'},{to:'/assistant',label:'Insights assistant'}];
 
@@ -109,6 +111,30 @@ export default function StudioDashboard(){
       <div className="sp-columns"><Panel title="Councils needing attention"><div className="sp-history-list">{COUNCILS.map(c=>({c,risks:allRisks.filter(r=>r.councilId===c.id)})).filter(x=>x.risks.length).map(({c,risks})=><Link className="sp-history-row rd-row-link" to="/alerts" key={c.id}><div><strong>{c.name}</strong><small>{risks[0].metric.name} · {risks.length} unresolved flags</small></div><span className={'sp-pill sp-'+risks[0].level.toLowerCase()}>{risks[0].level}</span></Link>)}{!allRisks.length&&<Empty>No councils currently flagged by the demo rules.</Empty>}</div></Panel>
         <Panel title="Corrective actions to follow up" link={{to:'/actions',label:'All actions'}}>{actions()}</Panel></div>
       <Panel title={'Key indicators · '+council?.name} link={{to:'/analytics',label:'Explore scores'}}><div className="sp-mini-grid">{METRICS.map(m=><div key={m.id}><span>{m.name}</span><strong>{series(councilId,m.id).at(-1)?.value??'—'}{m.unit}</strong><small>Demo target: {m.higherBetter?'≥':'≤'} {m.threshold}{m.unit}</small></div>)}</div></Panel>
+    </>}
+
+
+    {role==='Estate Officer'&&<>
+      <div className="sp-toolbar">{councilPicker()}<span className="rd-caption">Showing fictional cases for the selected council. Open Feedback Cases to update records in the database.</span></div>
+      <Stats items={[
+        {label:'Open feedback cases',value:allCases.filter(c=>c.townCouncilId===councilId&&c.status==='Open').length,detail:'Selected demonstration council'},
+        {label:'Unacknowledged cases',value:allCases.filter(c=>c.townCouncilId===councilId&&c.status==='Open'&&!c.acknowledgedAt).length,detail:'Open cases without acknowledgement'},
+        {label:'Unassigned cases',value:allCases.filter(c=>c.townCouncilId===councilId&&c.status==='Open'&&!c.assignedOfficer).length,detail:'Open cases needing an officer'},
+        {label:'Overdue open cases',value:allCases.filter(c=>c.townCouncilId===councilId&&c.status==='Open'&&Date.now()-Date.parse(c.receivedAt)>7*86_400_000).length,detail:'More than seven days old (demo rule)'}
+      ]}/>
+      <Panel title="Oldest feedback cases requiring follow-up" link={{to:'/cases',label:'Open Feedback Cases'}}>
+        <div className="sp-history-list">
+          {[...allCases].filter(c=>c.townCouncilId===councilId&&c.status==='Open')
+            .sort((a,b)=>a.receivedAt.localeCompare(b.receivedAt)).slice(0,6)
+            .map(c=><Link className="sp-history-row rd-row-link" to="/cases" key={c.id}>
+              <div><strong>{c.caseRef} · Block {c.block} · {c.category}</strong>
+                <small>{c.assignedOfficer??'Unassigned'} · Received {formatDate(c.receivedAt)}</small>
+                <small>{c.acknowledgedAt?'Acknowledged':'Awaiting acknowledgement'}</small>
+              </div><ArrowRight size={15}/></Link>)}
+          {!allCases.some(c=>c.townCouncilId===councilId&&c.status==='Open')&&<Empty>No open feedback cases for this council.</Empty>}
+        </div>
+      </Panel>
+      <p className="sp-footnote">This dashboard uses fictional in-memory cases. The Feedback Cases module uses the shared case database; its counts may differ.</p>
     </>}
 
     {role==='Administrator'&&<>

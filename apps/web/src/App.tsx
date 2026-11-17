@@ -20,6 +20,7 @@ import StudioReports from './StudioReports';
 import StudioAssistant from './StudioAssistant';
 import { RoleBanner, RoleGate, isPreviewVisible, useDemoRole } from './role-preview';
 import DeveloperTools from './DeveloperTools';
+import PageErrorBoundary from './PageErrorBoundary';
 
 type Kpi = { id:string; name:string; unit:string; value:number; target:number; trend:number; points:number[] };
 type Alert = { id:string; council:string; title:string; severity:'Watch'|'Warning'|'Critical'; status:string; reason:string; date:string };
@@ -150,9 +151,10 @@ function Sidebar() {
   </aside>;
 }
 function Layout() {
+  const {pathname}=useLocation();
   return <div className="app-layout"><Sidebar/><main className="main-area"><div className="content">
     <RoleBanner/>
-    <RoleGate><Routes>
+    <PageErrorBoundary key={pathname}><RoleGate><Routes>
       <Route index element={<StudioDashboard/>}/>
       <Route path="cases" element={<Cases/>}/>
       <Route path="operations/insights" element={<GroundInsightsPage/>}/>
@@ -180,7 +182,7 @@ function Layout() {
       <Route path="legacy/reports" element={<Reports/>}/>
       <Route path="legacy/assistant" element={<Assistant/>}/>
       <Route path="*" element={<div className="card">Page not found. <Link to="/">Return to dashboard</Link>.</div>}/>
-    </Routes></RoleGate>
+    </Routes></RoleGate></PageErrorBoundary>
     <footer>Estara prototype · All records, risk scores, rules and recommendations are illustrative.</footer>
   </div></main></div>;
 }
