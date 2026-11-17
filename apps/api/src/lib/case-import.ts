@@ -288,7 +288,8 @@ export async function buildTemplate(councils: { name: string }[], rows: SheetRow
   return Buffer.from(await workbook.xlsx.writeBuffer());
 }
 
-const sampleCases = [
+/** The case types used in the sample import file and the seed data: category, location within the block, description. */
+export const SAMPLE_CASE_TYPES = [
   ['Cleanliness', 'Bin centre', 'Litter and bulky items left beside the bin centre.'],
   ['Lift', 'Lift lobby L7', 'Lift doors keep reopening before the lift moves.'],
   ['Lighting', 'Common corridor L4', 'Corridor light flickering at night.'],
@@ -307,7 +308,7 @@ export async function buildSampleFile(councils: { name: string }[], now = Date.n
   const names = councils.length ? councils.map(c => c.name) : ['North District'];
   const officers = ['Officer A', 'Officer B', 'Officer C', null];
   const rows: SheetRow[] = Array.from({ length: 20 }, (_, i) => {
-    const [category, location, description] = sampleCases[i % sampleCases.length];
+    const [category, location, description] = SAMPLE_CASE_TYPES[i % SAMPLE_CASE_TYPES.length];
     const received = now - (1 + (i * 5) % 13) * DAY_MS - (i % 9) * 3_600_000;
     const closed = i % 3 === 0;
     return {

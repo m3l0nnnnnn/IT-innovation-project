@@ -469,15 +469,18 @@ The database client lives in [apps/api/src/db/index.ts](apps/api/src/db/index.ts
 
 ### Seed data
 
-Forecasting and the AI summaries need enough history to be useful. `npm run db:seed` ([seed.ts](apps/api/src/db/seed.ts)) creates 5 fictional Town Councils and about **8,500 feedback cases over the last 13 months**. It always produces the same data, with dates relative to today, and re-running it replaces the cases.
+Forecasting and the AI summaries need enough history to be useful. `npm run db:seed` ([seed.ts](apps/api/src/db/seed.ts), cases built in [seed-data.ts](apps/api/src/db/seed-data.ts)) creates 5 fictional Town Councils and about **8,500 feedback cases over the last 13 months**. It always produces the same data, with dates relative to today, and re-running it replaces the cases.
+
+The cases are based on the sample import file [`apps/api/data/feedback-case-sample-data.xlsx`](apps/api/data/feedback-case-sample-data.xlsx). They use the same block numbering (400, 407A, 414 …), "Sample Avenue" streets, case types, officers (A–C, or unassigned) and channels. Timings match too: acknowledged within hours, closed 1–3 days after receipt, with a slower tail. The sample's 21 importable cases are included with their own dates. Its 4 deliberately broken rows are skipped, and the seed lists them when it runs.
 
 The data has these patterns built in for the other modules to find:
 
 | Pattern | Where | Useful for |
 | --- | --- | --- |
-| Closure and acknowledgement times get steadily worse over the last 4 months | North District | KPI trends, days-to-fail forecast, alerts |
+| Closure times get steadily worse over the last 4 months, so open cases pile up past 7 days | North District | KPI trends, days-to-fail forecast, alerts |
+| Acknowledgement gets steadily slower over the last 4 months (the sample's West cases are unacknowledged) | West District | KPI trends, contributing factors, alerts |
 | Slow until ~3 months ago, then improves sharply | East District | "Did it work?" effectiveness check |
-| Roughly on target | Central, West, South | Comparison / benchmarking |
+| Roughly on target | Central, South | Comparison / benchmarking |
 | 2 hotspot blocks per council (Lift, Pests) with 5–8 cases in the last 45 days | All councils | Hotspot map |
 | ~3% of cases marked as duplicates of an earlier case | All councils | Duplicate detection |
 | More water seepage complaints in Nov–Jan | All councils | Seasonal trends |
