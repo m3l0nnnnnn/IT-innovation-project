@@ -1,0 +1,14 @@
+/* Scoped additions for the five role-specific dashboard views. */
+.rd-dashboard .rd-shortcuts{display:flex;flex-wrap:wrap;gap:10px;margin:0 0 20px}
+.rd-dashboard .rd-row-link{color:inherit;text-decoration:none;padding-left:6px;padding-right:6px;border-radius:6px}
+.rd-dashboard .rd-row-link:hover{background:var(--sp-soft)}
+.rd-dashboard .rd-row-link:focus-visible,.rd-dashboard .rd-shortcuts a:focus-visible{outline:2px solid var(--sp-accent);outline-offset:3px}
+.rd-dashboard .rd-caption{display:block;font-size:11px;line-height:1.65;color:var(--sp-muted);margin:12px 0 16px;max-width:880px}
+.rd-dashboard .rd-empty{font-size:12px;color:var(--sp-muted);padding:20px 0;line-height:1.6}
+.rd-dashboard .rd-scorecards{margin-top:18px;margin-bottom:0}
+.rd-dashboard .sp-detail-list dt{font-size:12px;color:var(--sp-muted)}
+.rd-dashboard .sp-detail-list dd{margin:0;font-size:13px;font-weight:700;color:var(--sp-text)}
+.rd-dashboard .sp-inline{flex-wrap:wrap}
+.rd-dashboard .sp-history-row{overflow-wrap:anywhere}
+.rd-dashboard .sp-pill{flex-shrink:0}
+@media(max-width:600px){.rd-dashboard .rd-shortcuts a{width:100%;justify-content:space-between}.rd-dashboard .sp-toolbar label{width:100%}}
