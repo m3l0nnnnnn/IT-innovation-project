@@ -39,7 +39,8 @@ const pathOf=(to:string)=>to.split(/[?#]/)[0].replace(/(.)\/$/,'$1');
 /** Whether the current preview role can see the page a link points to (query string ignored). */
 export function useCanSee(to:string){
   const path=pathOf(to);
-  return !modulePaths.has(path)||isPreviewVisible(useDemoRole(),path);
+  const role=useDemoRole();
+  return !modulePaths.has(path)||isPreviewVisible(role,path);
 }
 /** A Link that is hidden, or replaced by `fallback`, when the preview role cannot see its page. */
 export function RoleLink({fallback=null,...props}:LinkProps&{to:string;fallback?:ReactNode}){
