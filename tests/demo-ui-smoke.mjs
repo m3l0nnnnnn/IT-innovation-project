@@ -118,7 +118,7 @@ try {
   }
 
   await open('/reports');
-  await page.getByRole('button',{name:/Exports/}).click();
+  await page.getByRole('tab',{name:/Exports/}).click();
   const exportReady=page.waitForEvent('download',{timeout:15000});
   await page.getByRole('button',{name:'CSV'}).first().click();
   const csvExport=await exportReady;
