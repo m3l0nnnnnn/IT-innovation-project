@@ -95,8 +95,8 @@ try {
   pass('import preview and invalid/ready row filters');
 
   page.once('dialog',d=>d.accept());
-  await dialog.getByRole('button',{name:/Import selected/}).click();
-  await page.getByText(/case.*imported/i).first().waitFor({timeout:15000});
+  await dialog.getByRole('button',{name:/^Import \d+ cases?$/}).click();
+  await page.getByText(/Imported \d+ cases?/i).first().waitFor({timeout:15000});
   pass('selected case imported through UI into temporary database');
 
   await open('/alerts');
