@@ -3,7 +3,7 @@ import { Link, useLocation, type LinkProps } from 'react-router-dom';
 import { Eye, Lock, RotateCcw } from 'lucide-react';
 import './role-preview.css';
 
-export const DEMO_ROLES=['Administrator','EMS Manager','Field Inspector','Management Viewer'] as const;
+export const DEMO_ROLES=['Administrator','EMS Manager','Estate Officer','Field Inspector','Management Viewer'] as const;
 export type DemoRole=typeof DEMO_ROLES[number];
 let current:DemoRole='Administrator';
 try {
@@ -27,6 +27,7 @@ const permitted:Record<DemoRole,string[]|null>={
   'EMS Manager':['/','/cases','/operations/insights','/operations/hotspots','/operations/inspections','/operations/map',
     '/analytics','/analytics/trends','/analytics/factors','/analytics/settings','/analytics/scenarios',
     '/alerts','/actions','/risk/rules','/risk/replay','/reports','/assistant'],
+  'Estate Officer':['/','/cases','/operations/insights','/operations/hotspots'],
   'Field Inspector':['/','/cases','/operations/inspections','/operations/map'],
   'Management Viewer':['/','/analytics','/analytics/trends','/analytics/factors','/analytics/scenarios','/alerts','/reports','/assistant']
 };
