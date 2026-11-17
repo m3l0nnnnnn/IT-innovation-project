@@ -108,7 +108,9 @@ try {
     await action.locator('input[maxlength="120"]').fill('UI smoke test corrective action');
     await action.locator('input[maxlength="80"]').fill('Test Officer');
     await action.getByRole('button',{name:/Save demo action/}).click();
-    await open('/actions');
+    // This prototype stores actions in memory. Use SPA navigation, not page.goto(), to preserve state.
+    await page.locator('.sp-tabs a[href="/actions"]').click();
+    await page.locator('.page-header h1').waitFor();
     await page.getByText('UI smoke test corrective action').waitFor();
     pass('warning linked to created corrective action');
   } else {
