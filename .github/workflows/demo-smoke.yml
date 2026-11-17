@@ -1,0 +1,86 @@
+name: Estara API and browser demo smoke tests
+
+on:
+  push:
+    branches:
+      - fix/role-preview-hook-blank-pages-20261118
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  demo-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: estara
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d estara"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 15
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/estara
+      PORT: 4000
+      WEB_ORIGIN: http://127.0.0.1:5173
+      CI: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Type checks
+        run: npm run check
+      - name: Unit tests
+        run: npm test
+      - name: Build API and frontend
+        run: npm run build
+      - name: Migrate temporary PostgreSQL database
+        run: npm run db:migrate
+      - name: Seed fictional data into temporary database
+        run: npm run db:seed
+      - name: Start API and frontend servers
+        run: |
+          npm run dev -w @estara/api > /tmp/estara-api.log 2>&1 &
+          npm run dev -w @estara/web > /tmp/estara-web.log 2>&1 &
+          for i in $(seq 1 45); do
+            if curl --fail --silent http://127.0.0.1:4000/api/health > /dev/null && curl --fail --silent http://127.0.0.1:5173/ > /dev/null; then
+              echo "Both servers ready."
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "API or web failed to start:"
+          cat /tmp/estara-api.log /tmp/estara-web.log
+          exit 1
+      - name: Exercise live HTTP APIs on temporary database
+        run: node tests/demo-api-smoke.mjs
+      - name: Install Playwright headless Chromium for UI testing
+        run: |
+          npm install --no-save --package-lock=false playwright@1.56.1
+          npx playwright install --with-deps chromium
+      - name: Exercise major UI navigation and workflows in Chromium
+        run: node tests/demo-ui-smoke.mjs
+      - name: Show server logs after failure
+        if: failure()
+        run: |
+          tail -n 120 /tmp/estara-api.log || true
+          tail -n 120 /tmp/estara-web.log || true
+      - name: Preserve UI screenshot after failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: estara-ui-failure
+          path: /tmp/estara-ui-failure.png
+          if-no-files-found: ignore
