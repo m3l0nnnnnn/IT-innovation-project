@@ -1,14 +1,15 @@
 import { useMemo, useState, type ChangeEvent, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
-import { RoleLink } from './role-preview';
+import { RoleLink, useDemoRole } from './role-preview';
 import { AlertTriangle, ArrowRight, Camera, CheckCircle2, ClipboardCheck, ImagePlus, MapPin,
-  Plus, RefreshCw, Search, ShieldAlert, X } from 'lucide-react';
+  Plus, RefreshCw, Route, Search, ShieldAlert, X } from 'lucide-react';
 import { getDemoCasesSnapshot, type DemoCase } from './ground-demo';
 import { createDemoInspection, currentDemoCouncils, getDemoInspectionsSnapshot,
   inspectionCategories, photoToDemoJpeg, updateDemoInspection,
   type Inspection, type InspectionCategory, type InspectionDraft, type InspectionPriority,
   type InspectionStatus } from './ground-inspections';
-import RealBlockMap, { demoMapCoordinates, type DemoMapPoint } from './RealBlockMap';
+import InspectorRoutePanel from './InspectorRoutePanel';
+import RealBlockMap, { demoMapCoordinates, type DemoMapPoint, type InspectorRouteMap } from './RealBlockMap';
 import './estate-monitoring.css';
 
 type View='inspections'|'map';
@@ -69,12 +70,15 @@ export default function EstateMonitoring({initialView}:{initialView:View}){
   const [query,setQuery]=useState('');
   const [selectedInspection,setSelectedInspection]=useState<string|null>(null);
   const [selectedBlock,setSelectedBlock]=useState<string|null>(null);
+  const [routeOpen,setRouteOpen]=useState(false);
+  const [inspectorRoute,setInspectorRoute]=useState<InspectorRouteMap|null>(null);
   const [showForm,setShowForm]=useState(false);
   const [draft,setDraft]=useState<InspectionDraft>(emptyDraft(''));
   const [photoError,setPhotoError]=useState('');
   const [notice,setNotice]=useState('');
   const [photoBusy,setPhotoBusy]=useState(false);
   const councils=useMemo(()=>currentDemoCouncils(),[]);
+  const role=useDemoRole();
   const data=useMemo(()=>({
     cases:getDemoCasesSnapshot(),
     inspections:getDemoInspectionsSnapshot()
@@ -95,6 +99,15 @@ export default function EstateMonitoring({initialView}:{initialView:View}){
     return {key:b.key,townCouncilId:b.townCouncilId,block:b.block,
       council:b.council,risk:b.risk,lat,lng};
   }),[blocks,councils]);
+  const routeCandidates=useMemo(()=>data.inspections.map(inspection=>{
+    const councilIndex=councils.findIndex(item=>item.id===inspection.townCouncilId);
+    const point=demoMapCoordinates(
+      inspection.townCouncilId,inspection.block,Math.max(0,councilIndex));
+    return {
+      inspection,
+      coordinates:point
+    };
+  }),[data.inspections,councils]);
   const chosen=selectedInspection?data.inspections.find(i=>i.ref===selectedInspection):null;
   const block=selectedBlock?blocks.find(b=>b.key===selectedBlock):null;
   const filteredCases=useMemo(()=>data.cases.filter(c=>c.townCouncilId===draft.townCouncilId),[data,draft.townCouncilId]);
@@ -207,10 +220,17 @@ export default function EstateMonitoring({initialView}:{initialView:View}){
       <div className="em-map-layout">
         <div className="card em-map-card">
           <div className="em-map-header"><div><h2>Singapore street map</h2><p>Zoom, drag and select illustrative pins. Their locations are not verified block addresses.</p></div>
-            <span>{blocks.length} blocks</span>
+            <div className="em-map-header-actions"><span>{blocks.length} blocks</span>
+              {role==='Field Inspector'&&<button type="button" className="em-route-trigger"
+                aria-expanded={routeOpen} onClick={()=>{
+                  if(routeOpen){setRouteOpen(false);setInspectorRoute(null);}
+                  else setRouteOpen(true);
+                }}><Route size={15}/>{routeOpen?'Close My Route':'My Route'}</button>}
+            </div>
           </div>
           <RealBlockMap points={mapPoints} selectedKey={selectedBlock}
-            councilId={councilId} onPick={setSelectedBlock}/>
+            councilId={councilId} onPick={setSelectedBlock}
+            route={role==='Field Inspector'&&routeOpen?inspectorRoute:null}/>
           <div className="em-map-legend">
             <span><i className="em-legend-low"/> Low</span><span><i className="em-legend-watch"/> Watch</span>
             <span><i className="em-legend-elevated"/> Elevated</span>
@@ -218,7 +238,11 @@ export default function EstateMonitoring({initialView}:{initialView:View}){
           </div>
         </div>
         <aside className="card em-map-details">
-          {block?<><p className="eyebrow">SELECTED BLOCK</p><h2>Blk {block.block}</h2>
+          {role==='Field Inspector'&&routeOpen?<InspectorRoutePanel
+            inspections={data.inspections} candidates={routeCandidates} open={routeOpen}
+            onClose={()=>{setRouteOpen(false);setInspectorRoute(null);}}
+            onRouteChange={setInspectorRoute}/>
+          :block?<><p className="eyebrow">SELECTED BLOCK</p><h2>Blk {block.block}</h2>
             <p>{block.council}</p>
             <StatusTag status={block.risk}/>
             <dl className="em-map-facts">

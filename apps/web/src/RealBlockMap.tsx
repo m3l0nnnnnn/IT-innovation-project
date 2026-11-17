@@ -11,6 +11,7 @@ type Coordinates=[number,number];
 interface LeafletMapInstance{
   setView(center:Coordinates,zoom:number):LeafletMapInstance;
   flyTo(center:Coordinates,zoom:number,options?:{duration:number}):LeafletMapInstance;
+  fitBounds(bounds:Coordinates[],options:{padding:Coordinates;maxZoom:number}):LeafletMapInstance;
   getZoom():number;
   invalidateSize():void;
   remove():void;
@@ -22,12 +23,21 @@ interface LeafletMarkerInstance {
   setStyle(options:{radius:number;weight:number;color:string;fillColor:string}):LeafletMarkerInstance;
   remove():void;
 }
+interface LeafletLayerInstance{addTo(map:LeafletMapInstance):LeafletLayerInstance;remove():void}
+export type InspectorRouteMap={
+  path:Coordinates[];
+  roadBased:boolean;
+  stops:{number:number;coordinates:Coordinates}[];
+};
 interface LeafletLibrary{
   map(el:HTMLElement,options:{scrollWheelZoom:boolean;zoomControl:boolean}):LeafletMapInstance;
   tileLayer(url:string,options:{attribution:string;maxZoom:number}):{addTo(map:LeafletMapInstance):unknown};
   circleMarker(coords:Coordinates,options:{
     radius:number;weight:number;color:string;fillColor:string;fillOpacity:number;opacity:number
   }):LeafletMarkerInstance;
+  polyline(coords:Coordinates[],options:{color:string;weight:number;opacity:number;dashArray?:string}):LeafletLayerInstance;
+  marker(coords:Coordinates,options:{icon:unknown;keyboard:boolean;title:string}):LeafletMarkerInstance;
+  divIcon(options:{className:string;html:string;iconSize:Coordinates;iconAnchor:Coordinates}):unknown;
 }
 declare global{interface Window{L?:LeafletLibrary}}
 
@@ -70,14 +80,16 @@ function pinColor(risk:DemoMapRisk):string{
 }
 const TILE_URL='https://tile.openstreetmap.org/{z}/{x}/{y}.png';
 export default function RealBlockMap({
-  points,selectedKey,councilId,onPick
+  points,selectedKey,councilId,onPick,route
 }:{
   points:DemoMapPoint[];selectedKey:string|null;councilId:string;
   onPick:(key:string)=>void;
+  route?:InspectorRouteMap|null;
 }){
   const element=useRef<HTMLDivElement|null>(null);
   const mapInstance=useRef<LeafletMapInstance|null>(null);
   const markers=useRef<Map<string,LeafletMarkerInstance>>(new Map());
+  const routeLayers=useRef<LeafletLayerInstance[]>([]);
   const pickRef=useRef(onPick);
   pickRef.current=onPick;
   const [ready,setReady]=useState(false);
@@ -127,6 +139,8 @@ export default function RealBlockMap({
       window.removeEventListener('load',initialize);
       markers.current.forEach(marker=>marker.remove());
       markers.current.clear();
+      routeLayers.current.forEach(layer=>layer.remove());
+      routeLayers.current=[];
       mapInstance.current?.remove();
       mapInstance.current=null;
     };
@@ -164,6 +178,33 @@ export default function RealBlockMap({
       mapInstance.current.setView(SINGAPORE,11);
     }
   },[ready,selectedKey,councilId,center,points]);
+
+  useEffect(()=>{
+    const map=mapInstance.current;
+    const leaflet=window.L;
+    if(!ready||!map||!leaflet)return;
+    routeLayers.current.forEach(layer=>layer.remove());
+    routeLayers.current=[];
+    if(!route||!route.path.length)return;
+
+    const line=leaflet.polyline(route.path,{
+      color:'#19c4d2',weight:6,opacity:0.9,
+      ...(!route.roadBased?{dashArray:'9 9'}:{})
+    }).addTo(map);
+    routeLayers.current.push(line);
+    for(const stop of route.stops){
+      const marker=leaflet.marker(stop.coordinates,{
+        keyboard:false,title:`Route stop ${stop.number}`,
+        icon:leaflet.divIcon({
+          className:'em-route-div-icon',
+          html:`<span>${stop.number}</span>`,
+          iconSize:[32,32],iconAnchor:[16,16]
+        })
+      }).addTo(map);
+      routeLayers.current.push(marker);
+    }
+    map.fitBounds(route.path,{padding:[35,35],maxZoom:14});
+  },[ready,route]);
 
   return <div className="em-real-map-shell">
     <div ref={element} className="em-real-map" role="region" aria-label="Interactive Singapore street map showing illustrative demo case markers"/>
