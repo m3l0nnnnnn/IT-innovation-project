@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { RoleLink, useCanSee } from './role-preview';
 import { ArrowRight, BarChart2, Lightbulb, LineChart, MapPin, Megaphone } from 'lucide-react';
 import { getCaseMeta } from './cases-api';
 import { fmt, fmtChange, getDefinitions, getFactors, type Factors } from './kpi-api';
@@ -88,6 +89,7 @@ function Contributions({data}:{data:Factors}){
 }
 
 function Blocks({data}:{data:Factors}){
+  const canSeeCases=useCanSee('/cases'),canSeeHotspots=useCanSee('/operations/hotspots');
   return <article className="card sp-panel">
     <h2><MapPin size={16}/> Outstanding cases by block</h2>
     <p className="ka-sub">Open cases now, against what each block's usual share of the council's cases would suggest. <strong>Unusual</strong> means that many would happen less than 1% of the time.</p>
@@ -95,12 +97,12 @@ function Blocks({data}:{data:Factors}){
       <div className="ka-matrix-wrap"><table className="ka-table">
         <thead><tr><th>Block</th><th>Open</th><th>Usual</th><th>Over 7 days</th><th>Main category</th><th>Oldest</th></tr></thead>
         <tbody>{data.blocks.map(b=><tr key={b.block} className={b.unusual?'ka-row-flag':''}>
-          <td><Link to={'/cases?'+new URLSearchParams({townCouncilId:data.council.id,block:b.block,status:'Open'})}>Blk {b.block}</Link>
+          <td><RoleLink to={'/cases?'+new URLSearchParams({townCouncilId:data.council.id,block:b.block,status:'Open'})} fallback={'Blk '+b.block}>Blk {b.block}</RoleLink>
             {b.unusual&&<span className="badge warning ka-inline-badge">Unusual</span>}</td>
           <td><strong>{b.open}</strong></td><td>~{b.expected}</td><td>{b.overdue}</td><td>{b.topCategory}</td><td>{b.oldestDays} d</td>
         </tr>)}</tbody>
       </table></div>}
-    <small className="ka-note">{data.unusualBlocks} unusual block{data.unusualBlocks===1?'':'s'}. Select a block to open its cases. See also <Link to={'/operations/hotspots?townCouncilId='+data.council.id}>repeat-case hotspots</Link>.</small>
+    <small className="ka-note">{data.unusualBlocks} unusual block{data.unusualBlocks===1?'':'s'}.{canSeeCases&&' Select a block to open its cases.'}{canSeeHotspots&&<> See also <Link to={'/operations/hotspots?townCouncilId='+data.council.id}>repeat-case hotspots</Link>.</>}</small>
   </article>;
 }
 

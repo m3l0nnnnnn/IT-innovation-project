@@ -18,7 +18,7 @@ import KpiSettings from './KpiSettings';
 import StudioRisk from './StudioRisk';
 import StudioReports from './StudioReports';
 import StudioAssistant from './StudioAssistant';
-import { RoleBanner, isPreviewVisible, useDemoRole } from './role-preview';
+import { RoleBanner, RoleGate, isPreviewVisible, useDemoRole } from './role-preview';
 import DeveloperTools from './DeveloperTools';
 
 type Kpi = { id:string; name:string; unit:string; value:number; target:number; trend:number; points:number[] };
@@ -91,12 +91,11 @@ function Sidebar() {
     try{return window.localStorage.getItem(SIDEBAR_PREFERENCE_KEY)==='true';}
     catch{return false;}
   });
-  // The current route determines the default expanded group. Manual expansion
-  // wins until the user navigates to a different route.
-  const [manualGroup,setManualGroup]=useState<string|null>(null);
-  useEffect(()=>setManualGroup(null),[location.pathname]);
+  // Navigating opens the current page's group. Pages outside the groups (dashboard, settings)
+  // keep whichever group is open, so the menu does not jump.
   const routeGroup=visibleGroups.find(g=>g.items.some(item=>item.to===location.pathname))?.label;
-  const openGroup=manualGroup??routeGroup??'Ground Operations';
+  const [openGroup,setOpenGroup]=useState(()=>routeGroup??'Ground Operations');
+  useEffect(()=>{if(routeGroup)setOpenGroup(routeGroup);},[location.pathname,routeGroup]);
 
   function toggleSidebar(){
     const next=!collapsed;
@@ -107,9 +106,9 @@ function Sidebar() {
     if(collapsed){
       setCollapsed(false);
       try{window.localStorage.setItem(SIDEBAR_PREFERENCE_KEY,'false');}catch{}
-      setManualGroup(label);
+      setOpenGroup(label);
     } else {
-      setManualGroup(openGroup===label?'':label);
+      setOpenGroup(openGroup===label?'':label);
     }
   }
   return <aside className={'sidebar'+(collapsed?' sidebar-collapsed':'')}>
@@ -153,7 +152,7 @@ function Sidebar() {
 function Layout() {
   return <div className="app-layout"><Sidebar/><main className="main-area"><div className="content">
     <RoleBanner/>
-    <Routes>
+    <RoleGate><Routes>
       <Route index element={<StudioDashboard/>}/>
       <Route path="cases" element={<Cases/>}/>
       <Route path="operations/insights" element={<GroundInsightsPage/>}/>
@@ -181,7 +180,7 @@ function Layout() {
       <Route path="legacy/reports" element={<Reports/>}/>
       <Route path="legacy/assistant" element={<Assistant/>}/>
       <Route path="*" element={<div className="card">Page not found. <Link to="/">Return to dashboard</Link>.</div>}/>
-    </Routes>
+    </Routes></RoleGate>
     <footer>Estara prototype · All records, risk scores, rules and recommendations are illustrative.</footer>
   </div></main></div>;
 }

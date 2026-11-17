@@ -8,7 +8,6 @@ type DemoUser={id:number;name:string;role:DemoRole;status:string};
 const starting:DemoUser[]=[
   {id:1,name:'Demo Administrator',role:'Administrator',status:'Fictional profile'},
   {id:2,name:'Demo Operations Manager',role:'EMS Manager',status:'Fictional profile'},
-  {id:3,name:'Demo Estate Officer',role:'Estate Officer',status:'Fictional profile'},
   {id:4,name:'Demo Inspector',role:'Field Inspector',status:'Fictional profile'},
   {id:5,name:'Demo Report Reader',role:'Management Viewer',status:'Fictional profile'}
 ];

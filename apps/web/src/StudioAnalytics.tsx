@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
+import { RoleLink } from './role-preview';
 import { AlertTriangle, ArrowRight, BarChart3, Calculator, CheckCircle2, Download,
   GitCompareArrows, LineChart as LineIcon, Plus, Rows3, X } from 'lucide-react';
 import { Bar, BarChart, CartesianGrid, Cell, LabelList, Legend, Line, LineChart,
@@ -442,7 +443,8 @@ export default function StudioAnalytics(){
               <span className={'sp-pill '+(r.tone==='High'?'sp-critical':r.tone==='Medium'?'sp-warning':'sp-healthy')}>{r.tone} risk</span></div>
             <small>{display(r.projected,r.metric.unit)} projected vs target {r.metric.higherBetter?'≥':'≤'} {r.metric.threshold}{r.metric.unit} · {r.breachText}</small>
             <div className="sp-ro-foot">
-              {r.action?<Link className="sp-link" to="/actions">{r.action.id} {r.action.status.toLowerCase()} <ArrowRight size={13}/></Link>
+              {r.action?<RoleLink className="sp-link" to="/actions"
+                fallback={<span className="sp-ro-noact">{r.action.id} {r.action.status.toLowerCase()}</span>}>{r.action.id} {r.action.status.toLowerCase()} <ArrowRight size={13}/></RoleLink>
                 :<><span className="sp-ro-noact">No action yet</span>
                   <button type="button" className="sp-secondary sp-ro-create" onClick={()=>openActionForm(r.metric,r.tone)}>
                     <Plus size={14}/> Create corrective action</button></>}

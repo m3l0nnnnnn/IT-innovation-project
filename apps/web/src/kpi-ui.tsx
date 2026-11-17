@@ -4,7 +4,7 @@ import { AlertOctagon, AlertTriangle, ArrowDownRight, ArrowRight, ArrowUpRight, 
   LineChart, Minus, Search, Settings2, SlidersHorizontal } from 'lucide-react';
 import { apiErrorMessage } from './cases-api';
 import { fmtDays, type Forecast, type KpiStatus, type PeriodKind, type TrendLabel } from './kpi-api';
-import { useDemoRole } from './role-preview';
+import { isPreviewVisible, useDemoRole } from './role-preview';
 import './studio-pages.css';
 import './kpi-analytics.css';
 
@@ -49,12 +49,13 @@ const TABS=[
 /** Tabs across the analytics pages, carrying the current filters along. */
 export function AnalyticsTabs(){
   const location=useLocation();
+  const role=useDemoRole();
   const [params]=useSearchParams();
   const keep=new URLSearchParams();
   for(const k of ['period','asOf','kpiId','townCouncilId'])if(params.get(k))keep.set(k,params.get(k)!);
   const qs=keep.toString()?'?'+keep.toString():'';
   return <nav className="sp-tabs" aria-label="Performance analytics views">
-    {TABS.map(t=><NavLink key={t.to} to={t.to+(t.to.endsWith('scenarios')?'':qs)} end
+    {TABS.filter(t=>isPreviewVisible(role,t.to)).map(t=><NavLink key={t.to} to={t.to+(t.to.endsWith('scenarios')?'':qs)} end
       className={()=>location.pathname===t.to?'active':''}><t.icon size={16}/>{t.label}</NavLink>)}
   </nav>;
 }

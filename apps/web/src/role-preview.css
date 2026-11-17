@@ -22,3 +22,12 @@
 .rp-devtools-link:hover{background:#153c51;color:white}
 .sidebar.sidebar-collapsed .rp-devtools-link{display:none}
 @media(max-width:850px){.sidebar .rp-devtools-link{display:none}}
+
+/* Shown instead of a page the preview role cannot see. */
+.rp-blocked{display:flex;gap:14px;align-items:flex-start;max-width:640px}
+.rp-blocked>svg{flex:none;margin-top:3px;color:#a77a32}
+.rp-blocked h2{margin:0 0 6px}
+.rp-blocked p{margin:0 0 14px}
+.rp-blocked-actions{display:flex;gap:10px;flex-wrap:wrap}
+.rp-blocked-exit{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--ui-border,#d9e5ed);
+ border-radius:8px;padding:9px 12px;background:transparent;color:inherit;font-weight:700}

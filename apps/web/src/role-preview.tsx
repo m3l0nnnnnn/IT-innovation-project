@@ -1,8 +1,9 @@
-import { useSyncExternalStore } from 'react';
-import { Eye, RotateCcw } from 'lucide-react';
+import { useSyncExternalStore, type ReactNode } from 'react';
+import { Link, useLocation, type LinkProps } from 'react-router-dom';
+import { Eye, Lock, RotateCcw } from 'lucide-react';
 import './role-preview.css';
 
-export const DEMO_ROLES=['Administrator','EMS Manager','Estate Officer','Field Inspector','Management Viewer'] as const;
+export const DEMO_ROLES=['Administrator','EMS Manager','Field Inspector','Management Viewer'] as const;
 export type DemoRole=typeof DEMO_ROLES[number];
 let current:DemoRole='Administrator';
 try {
@@ -26,12 +27,37 @@ const permitted:Record<DemoRole,string[]|null>={
   'EMS Manager':['/','/cases','/operations/insights','/operations/hotspots','/operations/inspections','/operations/map',
     '/analytics','/analytics/trends','/analytics/factors','/analytics/settings','/analytics/scenarios',
     '/alerts','/actions','/risk/rules','/risk/replay','/reports','/assistant'],
-  'Estate Officer':['/','/cases','/operations/insights','/operations/hotspots','/operations/inspections','/operations/map','/alerts','/actions'],
   'Field Inspector':['/','/cases','/operations/inspections','/operations/map'],
   'Management Viewer':['/','/analytics','/analytics/trends','/analytics/factors','/analytics/scenarios','/alerts','/reports','/assistant']
 };
 export function isPreviewVisible(role:DemoRole,path:string){
   return permitted[role]===null||permitted[role]?.includes(path)===true;
+}
+// Module pages some role cannot see. Settings, developer tools and unknown paths are never hidden.
+const modulePaths=new Set(Object.values(permitted).flatMap(paths=>paths??[]));
+const pathOf=(to:string)=>to.split(/[?#]/)[0].replace(/(.)\/$/,'$1');
+/** Whether the current preview role can see the page a link points to (query string ignored). */
+export function useCanSee(to:string){
+  const path=pathOf(to);
+  return !modulePaths.has(path)||isPreviewVisible(useDemoRole(),path);
+}
+/** A Link that is hidden, or replaced by `fallback`, when the preview role cannot see its page. */
+export function RoleLink({fallback=null,...props}:LinkProps&{to:string;fallback?:ReactNode}){
+  return useCanSee(props.to)?<Link {...props}/>:<>{fallback}</>;
+}
+/** Shows a clear message instead of a page the preview role cannot see (e.g. a typed or bookmarked URL). */
+export function RoleGate({children}:{children:ReactNode}){
+  const role=useDemoRole();
+  const {pathname}=useLocation();
+  if(useCanSee(pathname))return <>{children}</>;
+  return <div className="card rp-blocked" role="alert">
+    <Lock size={20}/>
+    <div><h2>Not available for {role}</h2>
+      <p>This page is outside the {role} role. Use the sidebar to open the pages this role can see.</p>
+      <div className="rp-blocked-actions"><Link className="primary-button" to="/">Go to dashboard</Link>
+        <button type="button" className="rp-blocked-exit" onClick={()=>setDemoRole('Administrator')}>
+          <RotateCcw size={14}/> Exit role preview</button></div></div>
+  </div>;
 }
 export function RoleBanner(){
   const role=useDemoRole();

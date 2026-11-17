@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { RoleLink } from './role-preview';
 import { AlertTriangle, ArrowRight, Building2, ClipboardList, MessageSquare, ShieldCheck } from 'lucide-react';
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { COUNCILS, METRICS, riskRecords, getActions, series, operationsSnapshot, useStudioVersion } from './studio-data';
@@ -32,7 +32,7 @@ export default function StudioDashboard(){
       <article className="card sp-panel">
         <div className="sp-inline"><div><h2>Response-rate history</h2>
           <p>{COUNCILS[0].name} · synthetic monthly data</p></div>
-          <Link className="sp-link" to="/analytics">Analytics <ArrowRight size={15}/></Link></div>
+          <RoleLink className="sp-link" to="/analytics">Analytics <ArrowRight size={15}/></RoleLink></div>
         <div className="sp-chart"><ResponsiveContainer width="100%" height="100%">
           <AreaChart data={chart}><CartesianGrid strokeDasharray="4 4" stroke="var(--ui-border)"/>
             <XAxis dataKey="month" tick={{fontSize:10}}/><YAxis domain={[75,100]} tick={{fontSize:11}}/>
@@ -41,7 +41,7 @@ export default function StudioDashboard(){
         </ResponsiveContainer></div>
       </article>
       <article className="card sp-panel">
-        <div className="sp-inline"><h2>Warnings needing review</h2><Link className="sp-link" to="/alerts">All warnings <ArrowRight size={15}/></Link></div>
+        <div className="sp-inline"><h2>Warnings needing review</h2><RoleLink className="sp-link" to="/alerts">All warnings <ArrowRight size={15}/></RoleLink></div>
         <div className="sp-history-list">{risks.slice(0,6).map(r=><div className="sp-history-row" key={r.id}>
           <div><strong>{r.metric.name}</strong><small>{r.council} · {r.current}{r.metric.unit}</small></div>
           <span className={'sp-pill sp-'+r.level.toLowerCase()}>{r.level}</span>
@@ -49,7 +49,7 @@ export default function StudioDashboard(){
         {!risks.length&&<p>No threshold concerns in this fictional dataset.</p>}</div>
       </article>
     </div>
-    <article className="card sp-panel"><div className="sp-inline"><h2>Key indicators</h2><Link className="sp-link" to="/analytics">Explore scores <ArrowRight size={15}/></Link></div>
+    <article className="card sp-panel"><div className="sp-inline"><h2>Key indicators</h2><RoleLink className="sp-link" to="/analytics">Explore scores <ArrowRight size={15}/></RoleLink></div>
       <div className="sp-mini-grid">{METRICS.map(metric=><div key={metric.id}>
         <span>{metric.name}</span><strong>{series(COUNCILS[0].id,metric.id).at(-1)?.value}{metric.unit}</strong>
       </div>)}</div>

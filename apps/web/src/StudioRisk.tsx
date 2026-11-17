@@ -1,5 +1,5 @@
 import { useMemo, useState, type FormEvent } from 'react';
-import { Link } from 'react-router-dom';
+import { RoleLink } from './role-preview';
 import { AlertTriangle, BellRing, CheckCircle2, ClipboardList, Settings2,
   Plus, ArrowRight, X, ShieldCheck, History } from 'lucide-react';
 import { COUNCILS, METRICS, getRules, setRules, riskRecords, setAlertState,
@@ -95,9 +95,9 @@ export default function StudioRisk({view}:{view:View}){
         {path:'/actions',title:'Corrective Actions',icon:ClipboardList},
         {path:'/risk/rules',title:'Warning Rules',icon:Settings2},
         {path:'/risk/replay',title:'Historical Replay',icon:History}
-      ].map(({path,title,icon:Icon})=><Link key={path} to={path} className={(view==='alerts'&&path==='/alerts')||
+      ].map(({path,title,icon:Icon})=><RoleLink key={path} to={path} className={(view==='alerts'&&path==='/alerts')||
         (view==='actions'&&path==='/actions')||(view==='rules'&&path==='/risk/rules')||(view==='replay'&&path==='/risk/replay')?'active':''}>
-        <Icon size={16}/>{title}</Link>)}
+        <Icon size={16}/>{title}</RoleLink>)}
     </div>
     <div className="sp-toolbar card"><label>Town Council<select value={councilId} onChange={e=>setCouncilId(e.target.value)}>
       <option value="">All demo councils</option>{COUNCILS.map(c=><option key={c.id} value={c.id}>{c.name}</option>)}
@@ -232,6 +232,6 @@ export default function StudioRisk({view}:{view:View}){
         <p className="sp-footnote">This record is stored in temporary client memory only.</p>
       </section>
     </div>}
-    <p className="sp-footnote">Statuses represent demo interactions, not audited official action outcomes. <Link to="/analytics">Explore related analytics <ArrowRight size={13}/></Link></p>
+    <p className="sp-footnote">Statuses represent demo interactions, not audited official action outcomes. <RoleLink to="/analytics">Explore related analytics <ArrowRight size={13}/></RoleLink></p>
   </section>;
 }

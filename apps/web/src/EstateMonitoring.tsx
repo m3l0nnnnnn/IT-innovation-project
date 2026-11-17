@@ -1,5 +1,6 @@
 import { useMemo, useState, type ChangeEvent, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
+import { RoleLink } from './role-preview';
 import { AlertTriangle, ArrowRight, Camera, CheckCircle2, ClipboardCheck, ImagePlus, MapPin,
   Plus, RefreshCw, Search, ShieldAlert, X } from 'lucide-react';
 import { getDemoCasesSnapshot, type DemoCase } from './ground-demo';
@@ -151,7 +152,7 @@ export default function EstateMonitoring({initialView}:{initialView:View}){
     <div className="em-nav-tabs">
       <Link to="/operations/inspections" className={initialView==='inspections'?'active':''}><ClipboardCheck size={16}/> Inspections</Link>
       <Link to="/operations/map" className={initialView==='map'?'active':''}><MapPin size={16}/> Block Map</Link>
-      <Link to="/operations/insights"><ArrowRight size={15}/> Operational Insights</Link>
+      <RoleLink to="/operations/insights"><ArrowRight size={15}/> Operational Insights</RoleLink>
     </div>
     <div className="em-filter card">
       <label>Town Council
