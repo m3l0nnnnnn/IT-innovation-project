@@ -59,7 +59,7 @@ try {
   }
 
   await picker.selectOption('Field Inspector');
-  await open('/actions');
+  await page.goto(base+'/actions',{waitUntil:'domcontentloaded'});
   await page.getByText('Not available for Field Inspector').waitFor();
   pass('restricted role shows helpful access message');
   await picker.selectOption('Administrator');
