@@ -25,10 +25,10 @@ export function setDemoRole(role:DemoRole){
 const permitted:Record<DemoRole,string[]|null>={
   'Administrator':null,
   'EMS Manager':['/','/cases','/operations/insights','/operations/hotspots','/operations/inspections','/operations/map',
-    '/analytics','/analytics/trends','/analytics/factors','/analytics/settings','/analytics/scenarios',
+    '/analytics','/analytics/trends','/analytics/factors','/analytics/settings',
     '/alerts','/actions','/risk/rules','/risk/replay','/reports','/assistant'],
   'Field Inspector':['/','/cases','/operations/inspections','/operations/map'],
-  'Management Viewer':['/','/analytics','/analytics/trends','/analytics/factors','/analytics/scenarios','/alerts','/reports','/assistant']
+  'Management Viewer':['/','/analytics','/analytics/trends','/analytics/factors','/alerts','/reports','/assistant']
 };
 export function isPreviewVisible(role:DemoRole,path:string){
   return permitted[role]===null||permitted[role]?.includes(path)===true;
@@ -38,8 +38,9 @@ const modulePaths=new Set(Object.values(permitted).flatMap(paths=>paths??[]));
 const pathOf=(to:string)=>to.split(/[?#]/)[0].replace(/(.)\/$/,'$1');
 /** Whether the current preview role can see the page a link points to (query string ignored). */
 export function useCanSee(to:string){
+  const role=useDemoRole(); // Hooks must run unconditionally, before any short-circuit.
   const path=pathOf(to);
-  return !modulePaths.has(path)||isPreviewVisible(useDemoRole(),path);
+  return !modulePaths.has(path)||isPreviewVisible(role,path);
 }
 /** A Link that is hidden, or replaced by `fallback`, when the preview role cannot see its page. */
 export function RoleLink({fallback=null,...props}:LinkProps&{to:string;fallback?:ReactNode}){
