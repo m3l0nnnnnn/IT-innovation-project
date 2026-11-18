@@ -10,7 +10,6 @@ import GroundInsightsPage from './GroundInsights';
 import HotspotsPage from './Hotspots';
 import EstateMonitoring from './EstateMonitoring';
 import StudioDashboard from './StudioDashboard';
-import StudioAnalytics from './StudioAnalytics';
 import KpiOverview from './KpiOverview';
 import KpiTrends from './KpiTrends';
 import KpiFactors from './KpiFactors';
@@ -65,8 +64,7 @@ const navGroups=[
     {to:'/analytics',label:'KPI Overview'},
     {to:'/analytics/trends',label:'Trends & Forecast'},
     {to:'/analytics/factors',label:'Contributing Factors'},
-    {to:'/analytics/settings',label:'KPI Settings'},
-    {to:'/analytics/scenarios',label:'Scenarios (demo)'}
+    {to:'/analytics/settings',label:'KPI Settings'}
   ]},
   {label:'Risk & Actions',icon:BellRing,items:[
     {to:'/alerts',label:'Early Warnings'},
@@ -163,7 +161,6 @@ function Layout() {
       <Route path="analytics/trends" element={<KpiTrends/>}/>
       <Route path="analytics/factors" element={<KpiFactors/>}/>
       <Route path="analytics/settings" element={<KpiSettings/>}/>
-      <Route path="analytics/scenarios" element={<StudioAnalytics/>}/>
       <Route path="alerts" element={<StudioRisk view="alerts"/>}/>
       <Route path="actions" element={<StudioRisk view="actions"/>}/>
       <Route path="risk/rules" element={<StudioRisk view="rules"/>}/>
